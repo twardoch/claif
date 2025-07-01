@@ -1,0 +1,196 @@
+
+# PYDANTIC AI FOR PYTHON
+
+This document provides an extensive overview of the Pydantic AI library,
+including its core components, modules, and functionalities. The library is
+designed to streamline the development of AI-powered applications by
+leveraging Pydantic's data validation and settings management capabilities.
+
+## 1\. Core Concepts
+
+Pydantic AI is built around a few core concepts:
+
+  * **Agents** : The primary interface for interacting with language models. Agents manage the conversation flow, tool usage, and response generation.
+
+  * **Models** : Abstractions for different language models (e.g., OpenAI, Anthropic, Gemini), providing a consistent interface for making API requests.
+
+  * **Tools** : Functions that can be called by the agent to perform specific tasks, such as accessing a database or searching the web.
+
+  * **Output Schemas** : Pydantic models that define the structure of the expected output from the language model, ensuring that the response is in the desired format.
+
+## 2\. `pydantic_ai_slim`
+
+The `pydantic_ai_slim` package contains the core logic of the Pydantic AI
+library, including the `Agent` class, model implementations, and tool creation
+functions.
+
+### 2.1. `Agent` Class
+
+The `Agent` class is the central component of the Pydantic AI library. It
+orchestrates the interaction between the user, the language model, and the
+available tools.
+
+**Class Signature:**
+
+    
+    
+    class Agent(Generic[AgentDepsT, OutputDataT]):
+        ...
+      
+    
+
+**Key Parameters:**
+
+  * `model`: The language model to use for the agent. This can be a `pydantic_ai.models.Model` instance or a string representing a known model.
+
+  * `output_type`: The Pydantic model to use for validating the output of the agent.
+
+  * `system_prompt`: A string or a sequence of strings that will be used as the system prompt for the agent.
+
+  * `tools`: A sequence of `pydantic_ai.tools.Tool` instances that the agent can use.
+
+**Methods:**
+
+  * `run(user_prompt, ...)`: Runs the agent with the given user prompt and returns the result.
+
+  * `run_sync(user_prompt, ...)`: A synchronous version of the `run` method.
+
+  * `run_stream(user_prompt, ...)`: Runs the agent and streams the response.
+
+  * `tool(...)`: A decorator for creating and registering a tool with the agent.
+
+### 2.2. Models
+
+The `pydantic_ai.models` module provides a consistent interface for
+interacting with different language models. Each model is a subclass of
+`pydantic_ai.models.Model`.
+
+**Supported Models:**
+
+  * `OpenAIModel`: For OpenAI models like GPT-4.
+
+  * `AnthropicModel`: For Anthropic models like Claude.
+
+  * `GeminiModel`: For Google's Gemini models.
+
+  * `CohereModel`: For Cohere models.
+
+  * `GroqModel`: For Groq's models.
+
+  * `MistralModel`: For Mistral's models.
+
+  * `BedrockConverseModel`: For AWS Bedrock's Converse API.
+
+  * `FallbackModel`: A model that can fall back to other models in case of failure.
+
+  * `TestModel`: A model for testing purposes.
+
+### 2.3. Tools
+
+The `pydantic_ai.tools` module provides the `Tool` class and related utilities
+for creating and managing tools that can be used by the agent.
+
+**`Tool` Class:**
+
+The `Tool` class is used to create a tool from a Python function. The
+function's signature and docstring are used to generate a JSON schema that is
+passed to the language model.
+
+**Example:**
+
+    
+    
+    from pydantic_ai import Agent
+    
+    agent = Agent()
+    
+    @agent.tool
+    def get_weather(city: str) -> str:
+        """Gets the weather for a given city."""
+        # ... implementation ...
+        return "The weather in {} is sunny.".format(city)
+      
+    
+
+**Common Tools:**
+
+The `pydantic_ai.common_tools` module provides pre-built tools for common
+tasks:
+
+  * `duckduckgo_search_tool`: A tool for searching the web with DuckDuckGo.
+
+  * `tavily_search_tool`: A tool for searching the web with Tavily.
+
+## 3\. `pydantic_evals`
+
+The `pydantic_evals` package provides a framework for evaluating the
+performance of language models and agents.
+
+### 3.1. `Dataset` and `Case`
+
+The `Dataset` and `Case` classes are used to create a collection of test cases
+for evaluating a task.
+
+  * `Case`: Represents a single test case with inputs, expected output, and metadata.
+
+  * `Dataset`: A collection of `Case` instances.
+
+### 3.2. `Evaluator`
+
+The `Evaluator` class is the base class for all evaluators. Evaluators are
+used to assess the performance of a task based on a given context.
+
+**Common Evaluators:**
+
+  * `Equals`: Checks if the output is equal to the expected output.
+
+  * `Contains`: Checks if the output contains the expected output.
+
+  * `IsInstance`: Checks if the output is an instance of a given type.
+
+  * `MaxDuration`: Checks if the execution time is below a certain threshold.
+
+  * `LLMJudge`: Uses a language model to judge the output based on a given rubric.
+
+## 4\. `pydantic_graph`
+
+The `pydantic_graph` package provides a way to define and execute complex
+workflows as a graph of nodes.
+
+### 4.1. `Graph` and `BaseNode`
+
+  * `BaseNode`: The base class for all nodes in a graph. Each node represents a step in the workflow and must implement a `run` method.
+
+  * `Graph`: A collection of nodes that are connected to form a directed acyclic graph.
+
+## 5\. `fasta2a`
+
+The `fasta2a` package provides an implementation of the Agent-to-Agent (A2A)
+communication protocol, allowing agents to interact with each other.
+
+### 5.1. `FastA2A`
+
+The `FastA2A` class is a Starlette application that implements the A2A
+protocol. It can be used to create a server that exposes an agent's skills to
+other agents.
+
+## 6\. `clai`
+
+The `clai` package provides a command-line interface for interacting with
+language models.
+
+**Usage:**
+
+    
+    
+    clai "What is the capital of France?"
+      
+    
+
+The CLI supports various options for specifying the model, agent, and other
+parameters.
+
+This documentation provides a high-level overview of the Pydantic AI library.
+For more detailed information, please refer to the source code and the
+official documentation.
+
