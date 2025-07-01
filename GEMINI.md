@@ -12,6 +12,28 @@ The project consists of four Github repositories and Python packages:
 
 This document provides comprehensive development guidelines for all packages in the CLAIF ecosystem.
 
+## Current Status (Updated 2025-01-01)
+
+**Version**: 1.0.1
+**State**: Core framework complete, provider packages need separate implementation
+
+### What's Implemented
+- ✅ Plugin-based provider discovery using Python entry points
+- ✅ Fire-based CLI with rich terminal output
+- ✅ Async client API with provider routing
+- ✅ FastMCP server for tool integration
+- ✅ Comprehensive configuration system
+- ✅ Loguru-based logging (updated in v1.0.1)
+- ✅ Type hints throughout codebase
+- ✅ Error handling hierarchy
+
+### What's Not Implemented
+- ❌ Provider packages (claif_cla, claif_gem, claif_cod) - separate repos
+- ❌ Actual API integrations with Claude, Gemini, Codex
+- ❌ Response caching
+- ❌ Session persistence
+- ❌ Retry logic with exponential backoff
+
 ## 1. This very project overview
 
 ### 1.1. `claif`: CLAIF core framework

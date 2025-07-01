@@ -5,6 +5,19 @@ All notable changes to the CLAIF (Command-Line Artificial Intelligence Framework
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-01-01
+
+### Changed
+- Updated all logging implementation to use loguru instead of custom logger wrapper
+- Simplified logging configuration in CLI with automatic level adjustment based on verbose flag
+- Added debug logging for configuration display and updates
+- Added info logging for configuration saves
+- Added warning logging for unavailable interactive mode
+
+### Fixed
+- Removed unnecessary imports and simplified logger initialization
+- Fixed import ordering to follow Python conventions
+
 ## [1.0.0] - 2025-01-01
 
 ### Added

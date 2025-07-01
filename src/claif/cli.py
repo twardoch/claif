@@ -410,6 +410,7 @@ class ClaifCLI:
         """
         if action == "show":
             console.print("[bold]CLAIF Configuration:[/bold]")
+            logger.debug(f"Displaying config: {self.config}")
             console.print(f"  Default Provider: {self.config.default_provider.value}")
             console.print(f"  Cache Enabled: {self.config.cache_enabled}")
             console.print(f"  Cache TTL: {self.config.cache_ttl}s")
@@ -430,6 +431,7 @@ class ClaifCLI:
                 console.print("[red]No configuration values provided[/red]")
                 return
 
+            logger.debug(f"Updating config with: {kwargs}")
             # Update configuration
             for key, value in kwargs.items():
                 if key == "default_provider":
@@ -448,6 +450,7 @@ class ClaifCLI:
             path = kwargs.get("path")
             save_config(self.config, path)
             saved_path = path or "~/.claif/config.json"
+            logger.info(f"Configuration saved to: {saved_path}")
             console.print(f"[green]Configuration saved to: {saved_path}[/green]")
 
         else:
@@ -487,6 +490,7 @@ class ClaifCLI:
         if hasattr(cli, "interactive"):
             cli.interactive()
         else:
+            logger.warning(f"Interactive mode not available for {provider}")
             console.print(f"[yellow]Interactive mode not available for {provider}[/yellow]")
 
 

@@ -1,30 +1,45 @@
 # CLAIF TODO List
 
-## Immediate Tasks (v1.0 Release)
+## Critical: Provider Package Implementation
+
+### Provider Packages Need Implementation
+- [ ] Implement `claif_cla` package with claude_code_sdk integration
+- [ ] Implement `claif_gem` package with gemini-cli integration  
+- [ ] Implement `claif_cod` package for OpenAI/Codex
+- [ ] Test plugin discovery with real provider packages
+- [ ] Ensure providers properly register via entry points
+
+## Immediate Tasks (Core Framework Polish)
 
 ### Testing & Validation
-- [ ] Test with actual provider packages (claif_cla, claif_gem, claif_cod)
-- [ ] Verify plugin discovery mechanism works correctly
-- [ ] Test CLI commands with real API calls
-- [ ] Validate MCP server functionality
-- [ ] Check configuration loading hierarchy
+- [x] Plugin discovery mechanism implemented
+- [x] CLI commands structure complete
+- [x] MCP server implementation done
+- [x] Configuration loading hierarchy working
+- [ ] Test with actual provider packages once implemented
+- [ ] End-to-end testing with real APIs
 
 ### Documentation
-- [ ] Add docstrings to remaining functions
-- [ ] Create simple getting started guide
-- [ ] Document environment variables
-- [ ] Add troubleshooting section to README
+- [x] Comprehensive README created
+- [x] All core functions have docstrings
+- [x] Environment variables documented
+- [x] Architecture explained in detail
+- [ ] Create provider implementation guide
+- [ ] Add troubleshooting for common issues
 
-### Code Quality
-- [ ] Add basic unit tests for core components
+### Code Quality  
+- [x] Loguru logging implemented throughout
+- [x] Type hints on all public APIs
+- [ ] Add unit tests for core components
 - [ ] Set up pre-commit hooks
 - [ ] Run mypy type checking
-- [ ] Address any remaining linter warnings
+- [ ] Add pytest fixtures
 
 ### Release Preparation
-- [ ] Verify package metadata in pyproject.toml
+- [x] Package metadata configured
+- [x] Build system (hatchling) set up
 - [ ] Test package building with `python -m build`
-- [ ] Create GitHub release workflow
+- [ ] Create GitHub release workflow  
 - [ ] Prepare PyPI release
 
 ## Next Release (v1.1)

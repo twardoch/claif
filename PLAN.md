@@ -69,14 +69,23 @@ CLAIF (Command-Line Artificial Intelligence Framework) is a unified interface fo
 
 ## Current Status
 
-v1.0 is feature-complete with:
-- Core framework implemented
-- All three providers supported
+v1.0.1 released with:
+- Core framework fully implemented
+- All three provider wrappers ready (actual providers need separate packages)
 - CLI and API functional
-- Basic documentation complete
+- Comprehensive documentation complete
+- Loguru-based logging throughout
 
-Next steps:
-1. Testing with real provider packages
-2. Bug fixes and stabilization
-3. PyPI release preparation
+Immediate priorities:
+1. Implement provider packages (claif_cla, claif_gem, claif_cod)
+2. Test integration with real APIs
+3. PyPI release of core framework
 4. User feedback collection
+
+## What's Actually Working
+
+The core framework is complete but requires the provider packages to be functional:
+- The `claif` package provides the unified interface
+- Provider packages must implement the `query` async generator
+- Plugin discovery works through Python entry points
+- All infrastructure is ready for provider integration
