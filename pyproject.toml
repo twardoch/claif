@@ -42,15 +42,18 @@ classifiers = [
 ]
 
 dependencies = [
-    "fire>=0.6.0",
+    "fire>=0.7.0",
     "rich>=13.9.4",
     "fastmcp>=2.9.2",
     "loguru>=0.7.0",
     "pydantic>=2.0.0",
-    "uvicorn>=0.32.0",
+    "uvicorn>=0.34.1",
     "importlib-metadata>=8.7.0",
     "importlib-resources>=6.5.2",
     "typing-extensions>=4.0.0; python_version < '3.11'",
+    'claif_cla>=1.0.0',  # Claude provider
+    'claif_gem>=1.0.0',  # Gemini provider
+    'claif_cod>=1.0.0',  # Codex provider
 ]
 
 # Author information
@@ -103,9 +106,18 @@ docs = [
 
 # All optional dependencies combined - includes all provider packages
 all = [
-    'claif-cla>=0.1.0',  # Claude provider
-    'claif-gem>=0.1.0',  # Gemini provider
-    'claif-cod>=0.1.0',  # Codex provider
+    "fire>=0.7.0",
+    "rich>=13.9.4",
+    "fastmcp>=2.9.2",
+    "loguru>=0.7.0",
+    "pydantic>=2.0.0",
+    "uvicorn>=0.34.1",
+    "importlib-metadata>=8.7.0",
+    "importlib-resources>=6.5.2",
+    "typing-extensions>=4.0.0; python_version < '3.11'",
+    'claif_cla>=1.0.0',  # Claude provider
+    'claif_gem>=1.0.0',  # Gemini provider
+    'claif_cod>=1.0.0',  # Codex provider
 ]
 
 #------------------------------------------------------------------------------
