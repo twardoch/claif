@@ -1,6 +1,8 @@
 """Utility functions for CLAIF framework."""
 
 import json
+import os
+import time
 from collections.abc import AsyncIterator
 from datetime import datetime
 from functools import wraps
@@ -124,3 +126,32 @@ def parse_content_blocks(content: Any) -> list[ContentBlock]:
                 blocks.append(TextBlock(text=str(item)))
         return blocks
     return [TextBlock(text=str(content))]
+
+
+def get_claif_bin_path() -> Path:
+    """Get the claif bin directory path."""
+    from platformdirs import user_data_dir
+
+    claif_data_dir = Path(user_data_dir("claif", "claif"))
+    return claif_data_dir / "bin"
+
+
+def inject_claif_bin_to_path() -> dict[str, str]:
+    """Inject claif bin directory into PATH environment variable.
+
+    Returns:
+        Environment dict with claif bin directory prepended to PATH
+    """
+    env = os.environ.copy()
+    claif_bin = get_claif_bin_path()
+
+    if claif_bin.exists():
+        current_path = env.get("PATH", "")
+        claif_bin_str = str(claif_bin)
+
+        # Only add if not already in PATH
+        if claif_bin_str not in current_path.split(os.pathsep):
+            env["PATH"] = f"{claif_bin_str}{os.pathsep}{current_path}"
+            logger.debug(f"Injected claif bin directory into PATH: {claif_bin}")
+
+    return env

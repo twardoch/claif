@@ -5,6 +5,52 @@ All notable changes to the CLAIF (Command-Line Artificial Intelligence Framework
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2025-07-01
+
+### Added
+- Added new exports to common module: ClaifOptions, ClaifResponse, ClaifTimeoutError, MessageRole, ResponseMetrics, SessionError, TransportError, ValidationError
+- Added save_config function export from config module
+- Added format_metrics utility function
+- Added find_executable and InstallError imports to common utils
+
+### Changed
+- Enhanced error hierarchy with more specific error types
+- Improved imports organization in all provider modules (claude.py, codex.py, gemini.py)
+- Updated client.py to use enhanced imports
+- Fixed import paths for better module organization
+- Enhanced server.py imports and error handling
+
+### Fixed
+- Removed empty src/__init__.py file
+- Fixed import inconsistencies across modules
+- Improved type exports for better API consistency
+
+### Removed
+- Removed duplicate imports and unnecessary code
+
+## [1.0.5] - 2025-07-01
+
+[Previous version - no changelog entry]
+
+## [1.0.4] - 2025-07-01
+
+[Previous version - no changelog entry]
+
+## [1.0.3] - 2025-07-01
+
+[Previous version - no changelog entry]
+
+## [1.0.2] - 2025-07-01
+
+### Changed
+- Reduced log noise by changing provider selection logs from INFO to DEBUG level
+- "Using provider: {provider}" messages now only appear in debug mode
+- "Randomly selected provider: {provider}" messages now only appear in debug mode
+
+### Improved
+- Cleaner command output with minimal logging unless verbose mode is enabled
+- Better user experience with less noisy console output
+
 ## [1.0.1] - 2025-01-01
 
 ### Changed

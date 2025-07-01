@@ -12,6 +12,12 @@ from .errors import (
     TransportError,
     ValidationError,
 )
+from .install import (
+    InstallError,
+    find_executable,
+    install_provider,
+    uninstall_provider,
+)
 from .types import (
     ClaifOptions,
     ClaifResponse,
@@ -32,6 +38,7 @@ __all__ = [
     "ClaifTimeoutError",
     "Config",
     "ConfigurationError",
+    "InstallError",
     "Message",
     "MessageRole",
     "Provider",
@@ -43,9 +50,12 @@ __all__ = [
     "ToolUseBlock",
     "TransportError",
     "ValidationError",
+    "find_executable",
     "format_metrics",
     "format_response",
+    "install_provider",
     "load_config",
     "logger",
     "save_config",
+    "uninstall_provider",
 ]

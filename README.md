@@ -1,8 +1,8 @@
 # CLAIF - Command Line Artificial Intelligence Framework
 
-## Quickstart
+## 1. Quickstart
 
-CLAIF is a unified Python framework that lets you query multiple AI providers (Claude, Gemini, OpenAI) through one simple interface.
+CLAIF is a unified Python framework that lets you query multiple AI providers (Claude, Gemini, OpenAI) through one simple interface. Version 1.0.6 enhances the API with more specific error types and improved module exports.
 
 ```bash
 pip install claif[all] && claif query "Explain quantum computing in one sentence"
@@ -10,7 +10,7 @@ pip install claif[all] && claif query "Explain quantum computing in one sentence
 
 CLAIF is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It provides a plugin-based architecture that enables seamless integration with various AI providers while maintaining a common API.
 
-## What is CLAIF?
+## 2. What is CLAIF?
 
 CLAIF is a lightweight framework that provides:
 
@@ -21,15 +21,15 @@ CLAIF is a lightweight framework that provides:
 - **Async Support**: Full async/await support for all operations
 - **Type Safety**: Comprehensive type hints throughout the codebase
 
-## Installation
+## 3. Installation
 
-### Basic Installation
+### 3.1. Basic Installation
 
 ```bash
 pip install claif
 ```
 
-### With Provider Packages
+### 3.2. With Provider Packages
 
 CLAIF requires provider packages to be installed separately:
 
@@ -43,7 +43,7 @@ pip install claif claif_gem  # For Gemini support
 pip install claif claif_cod  # For Codex/OpenAI support
 ```
 
-### Development Installation
+### 3.3. Development Installation
 
 ```bash
 git clone https://github.com/twardoch/claif.git
@@ -51,11 +51,11 @@ cd claif
 pip install -e ".[dev,test]"
 ```
 
-## CLI Usage
+## 4. CLI Usage
 
 CLAIF provides a comprehensive command-line interface built with Fire.
 
-### Basic Commands
+### 4.1. Basic Commands
 
 ```bash
 # Query default provider
@@ -77,7 +77,7 @@ claif random "Tell me a joke"
 claif parallel "What is AI?" --compare
 ```
 
-### Provider Management
+### 4.2. Provider Management
 
 ```bash
 # List available providers and their status
@@ -87,7 +87,7 @@ claif providers list
 claif providers status
 ```
 
-### Configuration
+### 4.3. Configuration
 
 ```bash
 # Show current configuration
@@ -100,16 +100,16 @@ claif config set default_provider=gemini
 claif config save
 ```
 
-### MCP Server
+### 4.4. MCP Server
 
 ```bash
 # Start the MCP (Model Context Protocol) server
 claif server --host localhost --port 8000
 ```
 
-## Python API Usage
+## 5. Python API Usage
 
-### Basic Usage
+### 5.1. Basic Usage
 
 ```python
 import asyncio
@@ -129,7 +129,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### Advanced Options
+### 5.2. Advanced Options
 
 ```python
 from claif import ClaifOptions, Provider
@@ -149,7 +149,7 @@ async for message in query("Complex question", options):
     print(message.content)
 ```
 
-### Parallel Queries
+### 5.3. Parallel Queries
 
 ```python
 from claif.client import query_all, query_random
@@ -166,7 +166,7 @@ async for message in query_random("Tell me a joke"):
     print(message.content)
 ```
 
-### Using the Client Class
+### 5.4. Using the Client Class
 
 ```python
 from claif.client import ClaifClient
@@ -184,32 +184,33 @@ async for message in client.query("Hello", options):
     print(message.content)
 ```
 
-## Why CLAIF is Useful
+## 6. Why CLAIF is Useful
 
-### 1. **Provider Independence**
+### 6.1. **Provider Independence**
 - Switch between AI providers without changing your code
 - Compare responses from multiple providers easily
 - Avoid vendor lock-in
 
-### 2. **Simplified Integration**
+### 6.2. **Simplified Integration**
 - Single API for all providers
 - Consistent error handling
 - Unified configuration management
 
-### 3. **Developer Experience**
+### 6.3. **Developer Experience**
 - Type hints for better IDE support
 - Rich CLI with beautiful output
+- **Clean console output** - commands show only AI responses (logging available with `--verbose`)
 - Comprehensive logging with loguru
 - MCP server for tool integration
 
-### 4. **Extensibility**
+### 6.4. **Extensibility**
 - Plugin-based architecture
 - Easy to add new providers
 - Clean separation of concerns
 
-## How It Works
+## 7. How It Works
 
-### Architecture Overview
+### 7.1. Architecture Overview
 
 CLAIF uses a layered architecture:
 
@@ -229,9 +230,9 @@ CLAIF uses a layered architecture:
 └─────┴─────┴─────┴──────────┘
 ```
 
-### Core Components
+### 7.2. Core Components
 
-#### 1. **Common Module** (`src/claif/common/`)
+#### 7.2.1. **Common Module** (`src/claif/common/`)
 
 Provides shared functionality across all providers:
 
@@ -257,7 +258,7 @@ Provides shared functionality across all providers:
   - Progress indicators
   - Logging configuration
 
-#### 2. **Providers Module** (`src/claif/providers/`)
+#### 7.2.2. **Providers Module** (`src/claif/providers/`)
 
 Simple wrapper classes that delegate to provider packages:
 
@@ -274,7 +275,7 @@ Each provider wrapper:
 - Implements the same `query` interface
 - Logs debug information
 
-#### 3. **Client Module** (`src/claif/client.py`)
+#### 7.2.3. **Client Module** (`src/claif/client.py`)
 
 The main client implementation:
 
@@ -293,7 +294,7 @@ Features:
 - Implements `query`, `query_random`, and `query_all`
 - Handles provider selection and error recovery
 
-#### 4. **CLI Module** (`src/claif/cli.py`)
+#### 7.2.4. **CLI Module** (`src/claif/cli.py`)
 
 Fire-based CLI with rich terminal output:
 
@@ -315,7 +316,7 @@ Commands:
 - `config`: Manage configuration
 - `server`: Start MCP server
 
-#### 5. **Server Module** (`src/claif/server.py`)
+#### 7.2.5. **Server Module** (`src/claif/server.py`)
 
 FastMCP server implementation providing tools:
 - `claif_query`: Query specific provider
@@ -324,7 +325,7 @@ FastMCP server implementation providing tools:
 - `claif_list_providers`: List available providers
 - `claif_health_check`: Check provider health
 
-### Configuration System
+### 7.3. Configuration System
 
 Configuration is loaded hierarchically:
 
@@ -357,7 +358,7 @@ Example configuration:
 }
 ```
 
-### Plugin System
+### 7.4. Plugin System
 
 CLAIF uses Python's entry points for dynamic provider discovery:
 
@@ -377,7 +378,7 @@ Provider packages register themselves:
 claude = "claif_cla"
 ```
 
-### Message Flow
+### 7.5. Message Flow
 
 1. **User Input**: CLI command or API call
 2. **Options Parsing**: Create `ClaifOptions` with configuration
@@ -387,7 +388,7 @@ claude = "claif_cla"
 6. **Response Streaming**: Yield `Message` objects as they arrive
 7. **Output Formatting**: Display with rich or return structured data
 
-### Logging System
+### 7.6. Logging System
 
 CLAIF uses loguru for simple, powerful logging:
 
@@ -397,9 +398,9 @@ CLAIF uses loguru for simple, powerful logging:
 - Warning logs for missing features
 - Structured logging with context
 
-## Development
+## 8. Development
 
-### Running Tests
+### 8.1. Running Tests
 
 ```bash
 # Run all tests
@@ -412,7 +413,7 @@ pytest --cov=src/claif --cov-report=term-missing
 pytest -k test_version
 ```
 
-### Code Quality
+### 8.2. Code Quality
 
 ```bash
 # Format code
@@ -425,7 +426,7 @@ ruff check src tests --fix
 mypy src/claif
 ```
 
-### Building
+### 8.3. Building
 
 ```bash
 # Build distribution
@@ -435,7 +436,7 @@ python -m build
 pip install -e ".[dev,test]"
 ```
 
-## Project Structure
+## 9. Project Structure
 
 ```
 claif/
@@ -467,7 +468,7 @@ claif/
 └── PROGRESS.md                  # Implementation status
 ```
 
-## Contributing
+## 10. Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -477,17 +478,17 @@ claif/
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
-## License
+## 11. License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Related Projects
+## 12. Related Projects
 
 - [claif_cla](https://github.com/twardoch/claif_cla/) - Claude provider implementation
 - [claif_gem](https://github.com/twardoch/claif_gem/) - Gemini provider implementation
 - [claif_cod](https://github.com/twardoch/claif_cod/) - Codex/OpenAI provider implementation
 
-## Links
+## 13. Links
 
 - [GitHub Repository](https://github.com/twardoch/claif)
 - [PyPI Package](https://pypi.org/project/claif/)

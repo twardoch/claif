@@ -1,8 +1,10 @@
 """Fire-based CLI for unified CLAIF wrapper."""
 
 import asyncio
+import shutil
 import sys
 import time
+import os
 
 import fire
 from rich.columns import Columns
@@ -494,6 +496,230 @@ class ClaifCLI:
         else:
             logger.warning(f"Interactive mode not available for {provider}")
             console.print(f"[yellow]Interactive mode not available for {provider}[/yellow]")
+
+    def install(self, providers: str = "all") -> None:
+        """Install CLAIF provider packages and bundle them.
+
+        Args:
+            providers: Comma-separated list of providers or 'all' (default)
+                      Options: claude, gemini, codex, all
+        """
+        from claif.install import install_all_tools
+
+        if providers.lower() == "all":
+            console.print("[bold]Installing all providers: claude, gemini, codex[/bold]\n")
+
+            results = install_all_tools()
+
+            # Display results
+            if results["installed"]:
+                console.print(f"[green]✅ Installed: {', '.join(results['installed'])}[/green]")
+            if results["failed"]:
+                console.print(f"[red]❌ Failed: {', '.join(results['failed'])}[/red]")
+
+            if results["failed"]:
+                console.print(f"\n[yellow]Some installations failed. You can retry with:[/yellow]")
+                console.print(f"[yellow]claif install {','.join(results['failed'])}[/yellow]")
+            else:
+                console.print(f"\n[green]🎉 All providers installed successfully![/green]")
+                console.print("[green]You can now use 'claude', 'gemini', and 'codex' commands[/green]")
+        else:
+            # For specific providers, use individual install modules
+            to_install = [p.strip() for p in providers.split(",")]
+            valid_providers = ["claude", "gemini", "codex"]
+
+            # Validate provider names
+            invalid = [p for p in to_install if p not in valid_providers]
+            if invalid:
+                console.print(f"[red]Invalid providers: {', '.join(invalid)}[/red]")
+                console.print(f"Available: {', '.join(valid_providers)}")
+                return
+
+            console.print(f"[bold]Installing providers: {', '.join(to_install)}[/bold]\n")
+
+            failed = []
+            succeeded = []
+
+            for provider in to_install:
+                console.print(f"\n[bold cyan]Installing {provider}...[/bold cyan]")
+
+                try:
+                    if provider == "claude":
+                        from claif_cla.install import install_claude
+
+                        result = install_claude()
+                    elif provider == "gemini":
+                        from claif_gem.install import install_gemini
+
+                        result = install_gemini()
+                    elif provider == "codex":
+                        from claif_cod.install import install_codex
+
+                        result = install_codex()
+
+                    if result["installed"]:
+                        succeeded.extend(result["installed"])
+                    if result["failed"]:
+                        failed.extend(result["failed"])
+
+                except Exception as e:
+                    console.print(f"[red]Error installing {provider}: {e}[/red]")
+                    failed.append(provider)
+
+            # Summary
+            console.print(f"\n[bold]Installation Summary:[/bold]")
+            if succeeded:
+                console.print(f"[green]✅ Succeeded: {', '.join(succeeded)}[/green]")
+            if failed:
+                console.print(f"[red]❌ Failed: {', '.join(failed)}[/red]")
+
+            if failed:
+                console.print(f"\n[yellow]Some installations failed. You can retry with:[/yellow]")
+                console.print(f"[yellow]claif install {','.join(failed)}[/yellow]")
+            else:
+                console.print(f"\n[green]🎉 All providers installed successfully![/green]")
+
+    def uninstall(self, providers: str = "all") -> None:
+        """Uninstall CLAIF provider executables.
+
+        Args:
+            providers: Comma-separated list of providers or 'all' (default)
+                      Options: claude, gemini, codex, all
+        """
+        from claif.install import uninstall_all_tools
+
+        if providers.lower() == "all":
+            console.print("[bold]Uninstalling all providers: claude, gemini, codex[/bold]\n")
+
+            results = uninstall_all_tools()
+
+            # Display results
+            if results["uninstalled"]:
+                console.print(f"[green]✅ Uninstalled: {', '.join(results['uninstalled'])}[/green]")
+            if results["failed"]:
+                console.print(f"[red]❌ Failed: {', '.join(results['failed'])}[/red]")
+
+            if results["uninstalled"]:
+                console.print(f"\n[green]🗑️ All providers uninstalled successfully![/green]")
+        else:
+            # For specific providers, use individual uninstall modules
+            to_uninstall = [p.strip() for p in providers.split(",")]
+            valid_providers = ["claude", "gemini", "codex"]
+
+            # Validate provider names
+            invalid = [p for p in to_uninstall if p not in valid_providers]
+            if invalid:
+                console.print(f"[red]Invalid providers: {', '.join(invalid)}[/red]")
+                console.print(f"Available: {', '.join(valid_providers)}")
+                return
+
+            console.print(f"[bold]Uninstalling providers: {', '.join(to_uninstall)}[/bold]\n")
+
+            failed = []
+            succeeded = []
+
+            for provider in to_uninstall:
+                console.print(f"\n[bold cyan]Uninstalling {provider}...[/bold cyan]")
+
+                try:
+                    if provider == "claude":
+                        from claif_cla.install import uninstall_claude
+
+                        result = uninstall_claude()
+                    elif provider == "gemini":
+                        from claif_gem.install import uninstall_gemini
+
+                        result = uninstall_gemini()
+                    elif provider == "codex":
+                        from claif_cod.install import uninstall_codex
+
+                        result = uninstall_codex()
+
+                    if result["uninstalled"]:
+                        succeeded.extend(result["uninstalled"])
+                    if result["failed"]:
+                        failed.extend(result["failed"])
+
+                except Exception as e:
+                    console.print(f"[red]Error uninstalling {provider}: {e}[/red]")
+                    failed.append(provider)
+
+            # Summary
+            console.print(f"\n[bold]Uninstallation Summary:[/bold]")
+            if succeeded:
+                console.print(f"[green]✅ Succeeded: {', '.join(succeeded)}[/green]")
+            if failed:
+                console.print(f"[red]❌ Failed: {', '.join(failed)}[/red]")
+
+            if succeeded:
+                console.print(f"\n[green]🗑️ Providers uninstalled successfully![/green]")
+
+    def status(self) -> None:
+        """Show installation status for all CLAIF providers."""
+        from claif.install import get_install_location
+
+        console.print("[bold]CLAIF Provider Status[/bold]\n")
+
+        # Show install directory
+        install_dir = get_install_location()
+        console.print(f"[bold]Install Directory:[/bold] {install_dir}")
+
+        # Check if install dir is in PATH
+        path_env = os.environ.get("PATH", "")
+        if str(install_dir) in path_env:
+            console.print("[green]✅ Install directory is in PATH[/green]")
+        else:
+            console.print("[yellow]⚠️ Install directory not in PATH[/yellow]")
+            console.print(f'[yellow]   Add to PATH: export PATH="{install_dir}:$PATH"[/yellow]')
+
+        console.print()
+
+        # Check each provider
+        providers = ["claude", "gemini", "codex"]
+        for provider in providers:
+            console.print(f"[bold]{provider.title()} Provider:[/bold]")
+
+            try:
+                if provider == "claude":
+                    from claif_cla.install import get_claude_status
+
+                    status = get_claude_status()
+                elif provider == "gemini":
+                    from claif_gem.install import get_gemini_status
+
+                    status = get_gemini_status()
+                elif provider == "codex":
+                    from claif_cod.install import get_codex_status
+
+                    status = get_codex_status()
+
+                if status["installed"]:
+                    console.print(f"  [green]✅ Installed: {status['path']} ({status['type']})[/green]")
+                else:
+                    console.print(f"  [yellow]⚪ Not installed[/yellow]")
+
+            except Exception as e:
+                console.print(f"  [red]❌ Error checking status: {e}[/red]")
+
+            # Check if command is available
+            try:
+                if shutil.which(provider):
+                    console.print(f"  [green]✅ Command '{provider}' available in PATH[/green]")
+                else:
+                    console.print(f"  [yellow]⚪ Command '{provider}' not in PATH[/yellow]")
+            except Exception:
+                console.print(f"  [red]❌ Error checking command availability[/red]")
+
+            console.print()
+
+        # Show helpful commands
+        console.print("[bold]Helpful Commands:[/bold]")
+        console.print("  [cyan]claif install[/cyan] - Install all providers")
+        console.print("  [cyan]claif install claude[/cyan] - Install specific provider")
+        console.print("  [cyan]claif uninstall[/cyan] - Uninstall all providers")
+        console.print("  [cyan]claif_cla install[/cyan] - Install Claude only")
+        console.print("  [cyan]claif_gem install[/cyan] - Install Gemini only")
+        console.print("  [cyan]claif_cod install[/cyan] - Install Codex only")
 
 
 def main():
