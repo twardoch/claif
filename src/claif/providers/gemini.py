@@ -1,9 +1,10 @@
-"""Gemini provider implementation."""
+"""Gemini provider for CLAIF."""
 
 from collections.abc import AsyncIterator
 
-from src.claif.common import ClaifOptions, Message, logger
-from src.claif_gem import query as gemini_query
+import claif_gem
+
+from claif.common import ClaifOptions, Message, logger
 
 
 class GeminiProvider:
@@ -20,5 +21,5 @@ class GeminiProvider:
         """Query Gemini."""
         logger.debug(f"Gemini provider: {prompt[:50]}...")
 
-        async for message in gemini_query(prompt, options):
+        async for message in claif_gem.query(prompt, options):
             yield message

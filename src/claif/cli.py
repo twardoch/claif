@@ -11,18 +11,20 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 
-from .client import _client, query, query_all, query_random
-from .common import (
+from claif.client import _client, query, query_all, query_random
+from claif.common import (
     ClaifOptions,
+    Config,
+    MessageRole,
     Provider,
     ResponseMetrics,
     format_metrics,
     format_response,
-    logger,
     load_config,
+    logger,
     save_config,
 )
-from .server import start_mcp_server
+from claif.server import start_mcp_server
 
 console = Console()
 
@@ -467,15 +469,15 @@ class ClaifCLI:
         """
         # Import the appropriate CLI module
         if provider == "claude":
-            from ..claif_cla.cli import ClaudeCLI
+            from claif_cla.cli import ClaudeCLI
 
             cli = ClaudeCLI(verbose=self.config.verbose)
         elif provider == "gemini":
-            from ..claif_gem.cli import GeminiCLI
+            from claif_gem.cli import GeminiCLI
 
             cli = GeminiCLI(verbose=self.config.verbose)
         elif provider == "codex":
-            from ..claif_cod.cli import CodexCLI
+            from claif_cod.cli import CodexCLI
 
             cli = CodexCLI(verbose=self.config.verbose)
         else:

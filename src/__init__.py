@@ -26,7 +26,6 @@ class PluginFinder:
                 if ep.name == plugin_name:
                     # Create a spec that will load the plugin module
                     from importlib.machinery import ModuleSpec
-                    from importlib.util import module_from_spec, spec_from_loader
 
                     plugin_module = ep.load()
 

@@ -1,9 +1,10 @@
-"""Unified client for CLAIF."""
+"""Client implementation for CLAIF."""
 
 import random
 from collections.abc import AsyncIterator
-from .common import ClaifOptions, Message, Provider, ProviderError, logger
-from .providers import ClaudeProvider, CodexProvider, GeminiProvider
+
+from claif.common import ClaifOptions, Message, Provider, ProviderError, logger
+from claif.providers import ClaudeProvider, CodexProvider, GeminiProvider
 
 
 class ClaifClient:
@@ -34,7 +35,7 @@ class ClaifClient:
             )
 
         provider_instance = self.providers[provider]
-        logger.info(f"Using provider: {provider.value}")
+        logger.debug(f"Using provider: {provider.value}")
 
         async for message in provider_instance.query(prompt, options):
             yield message
@@ -52,7 +53,7 @@ class ClaifClient:
         provider = random.choice(list(self.providers.keys()))
         options.provider = provider
 
-        logger.info(f"Randomly selected provider: {provider.value}")
+        logger.debug(f"Randomly selected provider: {provider.value}")
 
         async for message in self.query(prompt, options):
             yield message

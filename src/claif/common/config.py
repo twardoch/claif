@@ -5,10 +5,10 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-from src.claif.common.errors import ConfigurationError
-from src.claif.common.types import Provider
+from .errors import ConfigurationError
+from .types import Provider
 
 
 @dataclass

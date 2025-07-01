@@ -1,9 +1,10 @@
-"""Claude provider implementation."""
+"""Claude provider for CLAIF."""
 
 from collections.abc import AsyncIterator
 
-from src.claif.common import ClaifOptions, Message, logger
-from src.claif_cla import query as claude_query
+import claif_cla
+
+from claif.common import ClaifOptions, Message, logger
 
 
 class ClaudeProvider:
@@ -20,5 +21,5 @@ class ClaudeProvider:
         """Query Claude."""
         logger.debug(f"Claude provider: {prompt[:50]}...")
 
-        async for message in claude_query(prompt, options):
+        async for message in claif_cla.query(prompt, options):
             yield message

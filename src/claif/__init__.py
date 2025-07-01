@@ -1,6 +1,6 @@
 """CLAIF - Command Line Artificial Intelligence Framework."""
 
-from src.claif.common import (
+from claif.common import (
     ClaifError,
     ClaifOptions,
     ClaifResponse,

@@ -1,9 +1,10 @@
-"""Codex provider implementation."""
+"""Codex provider for CLAIF."""
 
 from collections.abc import AsyncIterator
 
-from src.claif.common import ClaifOptions, Message, logger
-from src.claif_cod import query as codex_query
+import claif_cod
+
+from claif.common import ClaifOptions, Message, logger
 
 
 class CodexProvider:
@@ -20,5 +21,5 @@ class CodexProvider:
         """Query Codex."""
         logger.debug(f"Codex provider: {prompt[:50]}...")
 
-        async for message in codex_query(prompt, options):
+        async for message in claif_cod.query(prompt, options):
             yield message

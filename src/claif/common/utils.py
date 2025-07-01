@@ -1,22 +1,24 @@
-"""Common utilities for CLAIF framework."""
+"""Utility functions for CLAIF framework."""
 
-import time
+import json
+from collections.abc import AsyncIterator
+from datetime import datetime
+from functools import wraps
+from io import StringIO
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from loguru import logger
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
+from .types import ContentBlock, Message, ResponseMetrics, TextBlock
 
 
 def format_response(message: Message, format: str = "text", syntax_highlighting: bool = True) -> str:
     """Format a message for display."""
     if format == "json":
-        import json
-
         return json.dumps(message_to_dict(message), indent=2)
 
     # Extract text content

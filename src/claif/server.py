@@ -1,13 +1,16 @@
-"""FastMCP server for CLAIF."""
+"""MCP server implementation for CLAIF."""
 
-import asyncio
+import json
+from functools import lru_cache
 from typing import Any
 
-from fastmcp import FastMCP
+import anyio
+from mcp.server import Server
 from pydantic import BaseModel
+from fastmcp import FastMCP
 
-from .client import query, query_all, query_random
-from .common import ClaifOptions, Config, Provider, logger
+from claif.client import query, query_all, query_random
+from claif.common import ClaifOptions, Config, Provider, logger
 
 
 # Pydantic models for MCP
