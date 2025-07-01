@@ -1,7 +1,7 @@
 """Provider implementations for CLAIF."""
 
 from .claude import ClaudeProvider
-from .gemini import GeminiProvider
 from .codex import CodexProvider
+from .gemini import GeminiProvider
 
-__all__ = ["ClaudeProvider", "GeminiProvider", "CodexProvider"]
+__all__ = ["ClaudeProvider", "CodexProvider", "GeminiProvider"]

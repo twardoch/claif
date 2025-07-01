@@ -11,10 +11,19 @@
 #------------------------------------------------------------------------------
 [project]
 name = 'claif' # Package name on PyPI
-description = '' # Short description
+description = 'Unified command-line interface framework for AI language models'
 readme = 'README.md' # Path to README file
 requires-python = '>=3.10' # Minimum Python version
 keywords = [
+    'ai',
+    'llm',
+    'claude',
+    'gemini',
+    'openai',
+    'cli',
+    'framework',
+    'mcp',
+    'language-models',
 ] # Keywords for PyPI search
 dynamic = ["version"] # Fields set dynamically at build time
 
@@ -33,12 +42,15 @@ classifiers = [
 ]
 
 dependencies = [
-    "importlib-metadata>=6.0.0",
-    "importlib-resources>=5.0.0",
-    "typing-extensions>=4.0.0; python_version < '3.10'",
-    "importlib-metadata>=6.0.0",
-    "importlib-resources>=5.0.0",
-    "typing-extensions>=4.0.0; python_version < '3.10'",
+    "fire>=0.6.0",
+    "rich>=13.9.4",
+    "fastmcp>=2.9.2",
+    "loguru>=0.7.0",
+    "pydantic>=2.0.0",
+    "uvicorn>=0.32.0",
+    "importlib-metadata>=8.7.0",
+    "importlib-resources>=6.5.2",
+    "typing-extensions>=4.0.0; python_version < '3.11'",
 ]
 
 # Author information
@@ -78,23 +90,22 @@ test = [
     'pytest-cov>=6.0.0', # Coverage plugin for pytest - Keep pytest-cov as is, update if newer pytest-cov version is required
     'pytest-xdist>=3.6.1', # Parallel test execution - Keep pytest-xdist as is, update if newer pytest-xdist version is required
     'pytest-benchmark[histogram]>=5.1.0', # Benchmarking plugin - Keep pytest-benchmark as is, update if newer pytest-benchmark version is required
-    'pytest-asyncio>=0.25.3', # Async test support - Keep pytest-asyncio as is, update if newer pytest-asyncio version is required
+    'pytest-asyncio>=0.26.0', # Async test support - Keep pytest-asyncio as is, update if newer pytest-asyncio version is required
     'coverage[toml]>=7.6.12',
 ]
 
 docs = [
-    "sphinx>=7.2.6",
-    "sphinx-rtd-theme>=2.0.0",
-    "sphinx-autodoc-typehints>=2.0.0",
-    "myst-parser>=3.0.0", # Markdown support in Sphinx
+    "sphinx>=8.2.3",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "myst-parser>=4.0.1", # Markdown support in Sphinx
 ]
 
-# All optional dependencies combined
+# All optional dependencies combined - includes all provider packages
 all = [
-    'pytest>=7.0.0',
-    'pytest-cov>=4.0.0',
-    'ruff>=0.1.0',
-    'mypy>=1.0.0',
+    'claif-cla>=0.1.0',  # Claude provider
+    'claif-gem>=0.1.0',  # Gemini provider
+    'claif-cod>=0.1.0',  # Codex provider
 ]
 
 #------------------------------------------------------------------------------
@@ -102,7 +113,8 @@ all = [
 # Entry points for command-line executables installed with the package.
 #------------------------------------------------------------------------------
 [project.scripts]
-# CLINAME = "claif.__main__:main"
+claif = "claif.cli:main"
+claif-server = "claif.server:main"
 
 #------------------------------------------------------------------------------
 # BUILD SYSTEM CONFIGURATION
@@ -126,15 +138,40 @@ build-backend = 'hatchling.build' # Specifies Hatchling as the build backend
 [tool.hatch.build]
 # Include package data files
 include = [
+    "src/claif/**/*.py",
     "src/claif/py.typed", # For better type checking support
-    "src/claif/data/**/*", # Include data files if any
-
 ]
-exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
+exclude = [
+    "**/__pycache__", 
+    "**/.pytest_cache", 
+    "**/.mypy_cache",
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/*~",
+    "**/#*"
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/claif"]
 reproducible = true
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+]
+exclude = [
+    "/.github",
+    "/.*",
+    "**/__pycache__",
+    "**/*.pyc",
+]
 
 
 # Version control system hook configuration
@@ -423,8 +460,8 @@ unfixable = [
     'F401', # Don't automatically remove unused imports - may be needed later
 
 ]
-# Configure extend-exclude to ignore specific directories
-extend-exclude = [".git", ".venv", "venv", "dist", "build"]
+# Configure excluded directories under the root [tool.ruff] section
+exclude = [".git", ".venv", "venv", "dist", "build", "__pycache__", "*.egg-info"]
 
 # isort configuration within Ruff
 [tool.ruff.lint.isort]

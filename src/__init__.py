@@ -72,6 +72,8 @@ def __getattr__(name: str) -> Any:
             if ep.name == name:
                 return ep.load()
     except Exception as e:
-        raise AttributeError(f"Failed to load plugin '{name}': {e}") from e
+        msg = f"Failed to load plugin '{name}': {e}"
+        raise AttributeError(msg) from e
 
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'") 
+    msg = f"module '{__name__}' has no attribute '{name}'"
+    raise AttributeError(msg)

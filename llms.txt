@@ -1,0 +1,4553 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/
+  workflows/
+    push.yml
+    release.yml
+.specstory/
+  .what-is-this.md
+reference/
+  pydantic-ai-tldr.txt
+src/
+  claif/
+    common/
+      __init__.py
+      config.py
+      errors.py
+      types.py
+      utils.py
+    providers/
+      __init__.py
+      claude.py
+      codex.py
+      gemini.py
+    __init__.py
+    cli.py
+    client.py
+    server.py
+  __init__.py
+tests/
+  test_package.py
+.cursorrules
+.gitignore
+.pre-commit-config.yaml
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+LICENSE
+pyproject.toml
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".github/workflows/push.yml">
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Ruff lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "check --output-format=github"
+
+      - name: Run Ruff Format
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "latest"
+          args: "format --check --respect-gitignore"
+
+  test:
+    name: Run Tests
+    needs: quality
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu-latest]
+      fail-fast: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-suffix: ${{ matrix.os }}-${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        run: |
+          uv pip install --system --upgrade pip
+          uv pip install --system ".[test]"
+
+      - name: Run tests with Pytest
+        run: uv run pytest -n auto --maxfail=1 --disable-warnings --cov-report=xml --cov-config=pyproject.toml --cov=src/claif --cov=tests tests/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}-${{ matrix.os }}
+          path: coverage.xml
+
+  build:
+    name: Build Distribution
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install build tools
+        run: uv pip install build hatchling hatch-vcs
+
+      - name: Build distributions
+        run: uv run python -m build --outdir dist
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-files
+          path: dist/
+          retention-days: 5
+</file>
+
+<file path=".github/workflows/release.yml">
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/claif
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install build tools
+        run: uv pip install build hatchling hatch-vcs
+
+      - name: Build distributions
+        run: uv run python -m build --outdir dist
+
+      - name: Verify distribution files
+        run: |
+          ls -la dist/
+          test -n "$(find dist -name '*.whl')" || (echo "Wheel file missing" && exit 1)
+          test -n "$(find dist -name '*.tar.gz')" || (echo "Source distribution missing" && exit 1)
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+</file>
+
+<file path=".specstory/.what-is-this.md">
+# SpecStory Artifacts Directory
+    
+This directory is automatically created and maintained by the SpecStory extension to preserve your AI chat history.
+    
+## What's Here?
+    
+- `.specstory/history`: Contains auto-saved markdown files of your AI coding sessions
+    - Each file represents a separate AI chat session
+    - If you enable auto-save, files are automatically updated as you work
+    - You can enable/disable the auto-save feature in the SpecStory settings, it is disabled by default
+- `.specstory/.project.json`: Contains the persistent project identity for the current workspace
+    - This file is only present if you enable AI rules derivation
+    - This is used to provide consistent project identity of your project, even as the workspace is moved or renamed
+- `.specstory/ai_rules_backups`: Contains backups of the `.cursor/rules/derived-cursor-rules.mdc` or the `.github/copilot-instructions.md` file
+    - Backups are automatically created each time the `.cursor/rules/derived-cursor-rules.mdc` or the `.github/copilot-instructions.md` file is updated
+    - You can enable/disable the AI Rules derivation feature in the SpecStory settings, it is disabled by default
+- `.specstory/.gitignore`: Contains directives to exclude non-essential contents of the `.specstory` directory from version control
+    - Add `/history` to exclude the auto-saved chat history from version control
+
+## Valuable Uses
+    
+- Capture: Keep your context window up-to-date when starting new Chat/Composer sessions via @ references
+- Search: For previous prompts and code snippets 
+- Learn: Meta-analyze your patterns and learn from your past experiences
+- Derive: Keep the AI on course with your past decisions by automatically deriving rules from your AI interactions
+    
+## Version Control
+    
+We recommend keeping this directory under version control to maintain a history of your AI interactions. However, if you prefer not to version these files, you can exclude them by adding this to your `.gitignore`:
+    
+```
+.specstory/**
+```
+
+We recommend __not__ keeping the `.specstory/ai_rules_backups` directory under version control if you are already using git to version your AI rules, and committing regularly. You can exclude it by adding this to your `.gitignore`:
+
+```
+.specstory/ai_rules_backups
+```
+
+## Searching Your Codebase
+    
+When searching your codebase, search results may include your previous AI coding interactions. To focus solely on your actual code files, you can exclude the AI interaction history from search results.
+    
+To exclude AI interaction history:
+    
+1. Open the "Find in Files" search in Cursor or VSCode (Cmd/Ctrl + Shift + F)
+2. Navigate to the "files to exclude" section
+3. Add the following pattern:
+    
+```
+.specstory/*
+```
+    
+This will ensure your searches only return results from your working codebase files.
+
+## Notes
+
+- Auto-save only works when Cursor or VSCode flushes sqlite database data to disk. This results in a small delay after the AI response is complete before SpecStory can save the history.
+
+## Settings
+    
+You can control auto-saving behavior in Cursor or VSCode:
+    
+1. Open Cursor/Code → Settings → VS Code Settings (Cmd/Ctrl + ,)
+2. Search for "SpecStory"
+3. Find "Auto Save" setting to enable/disable
+    
+Auto-save occurs when changes are detected in the sqlite database, or every 2 minutes as a safety net.
+</file>
+
+<file path="reference/pydantic-ai-tldr.txt">
+# PYDANTIC AI FOR PYTHON
+
+This document provides an extensive overview of the Pydantic AI library,
+including its core components, modules, and functionalities. The library is
+designed to streamline the development of AI-powered applications by
+leveraging Pydantic's data validation and settings management capabilities.
+
+## 1\. Core Concepts
+
+Pydantic AI is built around a few core concepts:
+
+  * **Agents** : The primary interface for interacting with language models. Agents manage the conversation flow, tool usage, and response generation.
+
+  * **Models** : Abstractions for different language models (e.g., OpenAI, Anthropic, Gemini), providing a consistent interface for making API requests.
+
+  * **Tools** : Functions that can be called by the agent to perform specific tasks, such as accessing a database or searching the web.
+
+  * **Output Schemas** : Pydantic models that define the structure of the expected output from the language model, ensuring that the response is in the desired format.
+
+## 2\. `pydantic_ai_slim`
+
+The `pydantic_ai_slim` package contains the core logic of the Pydantic AI
+library, including the `Agent` class, model implementations, and tool creation
+functions.
+
+### 2.1. `Agent` Class
+
+The `Agent` class is the central component of the Pydantic AI library. It
+orchestrates the interaction between the user, the language model, and the
+available tools.
+
+**Class Signature:**
+
+    
+    
+    class Agent(Generic[AgentDepsT, OutputDataT]):
+        ...
+      
+    
+
+**Key Parameters:**
+
+  * `model`: The language model to use for the agent. This can be a `pydantic_ai.models.Model` instance or a string representing a known model.
+
+  * `output_type`: The Pydantic model to use for validating the output of the agent.
+
+  * `system_prompt`: A string or a sequence of strings that will be used as the system prompt for the agent.
+
+  * `tools`: A sequence of `pydantic_ai.tools.Tool` instances that the agent can use.
+
+**Methods:**
+
+  * `run(user_prompt, ...)`: Runs the agent with the given user prompt and returns the result.
+
+  * `run_sync(user_prompt, ...)`: A synchronous version of the `run` method.
+
+  * `run_stream(user_prompt, ...)`: Runs the agent and streams the response.
+
+  * `tool(...)`: A decorator for creating and registering a tool with the agent.
+
+### 2.2. Models
+
+The `pydantic_ai.models` module provides a consistent interface for
+interacting with different language models. Each model is a subclass of
+`pydantic_ai.models.Model`.
+
+**Supported Models:**
+
+  * `OpenAIModel`: For OpenAI models like GPT-4.
+
+  * `AnthropicModel`: For Anthropic models like Claude.
+
+  * `GeminiModel`: For Google's Gemini models.
+
+  * `CohereModel`: For Cohere models.
+
+  * `GroqModel`: For Groq's models.
+
+  * `MistralModel`: For Mistral's models.
+
+  * `BedrockConverseModel`: For AWS Bedrock's Converse API.
+
+  * `FallbackModel`: A model that can fall back to other models in case of failure.
+
+  * `TestModel`: A model for testing purposes.
+
+### 2.3. Tools
+
+The `pydantic_ai.tools` module provides the `Tool` class and related utilities
+for creating and managing tools that can be used by the agent.
+
+**`Tool` Class:**
+
+The `Tool` class is used to create a tool from a Python function. The
+function's signature and docstring are used to generate a JSON schema that is
+passed to the language model.
+
+**Example:**
+
+    
+    
+    from pydantic_ai import Agent
+    
+    agent = Agent()
+    
+    @agent.tool
+    def get_weather(city: str) -> str:
+        """Gets the weather for a given city."""
+        # ... implementation ...
+        return "The weather in {} is sunny.".format(city)
+      
+    
+
+**Common Tools:**
+
+The `pydantic_ai.common_tools` module provides pre-built tools for common
+tasks:
+
+  * `duckduckgo_search_tool`: A tool for searching the web with DuckDuckGo.
+
+  * `tavily_search_tool`: A tool for searching the web with Tavily.
+
+## 3\. `pydantic_evals`
+
+The `pydantic_evals` package provides a framework for evaluating the
+performance of language models and agents.
+
+### 3.1. `Dataset` and `Case`
+
+The `Dataset` and `Case` classes are used to create a collection of test cases
+for evaluating a task.
+
+  * `Case`: Represents a single test case with inputs, expected output, and metadata.
+
+  * `Dataset`: A collection of `Case` instances.
+
+### 3.2. `Evaluator`
+
+The `Evaluator` class is the base class for all evaluators. Evaluators are
+used to assess the performance of a task based on a given context.
+
+**Common Evaluators:**
+
+  * `Equals`: Checks if the output is equal to the expected output.
+
+  * `Contains`: Checks if the output contains the expected output.
+
+  * `IsInstance`: Checks if the output is an instance of a given type.
+
+  * `MaxDuration`: Checks if the execution time is below a certain threshold.
+
+  * `LLMJudge`: Uses a language model to judge the output based on a given rubric.
+
+## 4\. `pydantic_graph`
+
+The `pydantic_graph` package provides a way to define and execute complex
+workflows as a graph of nodes.
+
+### 4.1. `Graph` and `BaseNode`
+
+  * `BaseNode`: The base class for all nodes in a graph. Each node represents a step in the workflow and must implement a `run` method.
+
+  * `Graph`: A collection of nodes that are connected to form a directed acyclic graph.
+
+## 5\. `fasta2a`
+
+The `fasta2a` package provides an implementation of the Agent-to-Agent (A2A)
+communication protocol, allowing agents to interact with each other.
+
+### 5.1. `FastA2A`
+
+The `FastA2A` class is a Starlette application that implements the A2A
+protocol. It can be used to create a server that exposes an agent's skills to
+other agents.
+
+## 6\. `clai`
+
+The `clai` package provides a command-line interface for interacting with
+language models.
+
+**Usage:**
+
+    
+    
+    clai "What is the capital of France?"
+      
+    
+
+The CLI supports various options for specifying the model, agent, and other
+parameters.
+
+This documentation provides a high-level overview of the Pydantic AI library.
+For more detailed information, please refer to the source code and the
+official documentation.
+</file>
+
+<file path="src/claif/common/__init__.py">
+"""Common utilities for CLAIF framework."""
+
+from .config import Config, load_config
+from .errors import ClaifError, ConfigurationError, ProviderError
+from .types import Message, Provider, TextBlock, ToolResultBlock, ToolUseBlock
+from .utils import format_response, get_logger
+
+__all__ = [
+    "ClaifError",
+    "Config",
+    "ConfigurationError",
+    "Message",
+    "Provider",
+    "ProviderError",
+    "TextBlock",
+    "ToolResultBlock",
+    "ToolUseBlock",
+    "format_response",
+    "get_logger",
+    "load_config",
+]
+</file>
+
+<file path="src/claif/common/config.py">
+"""Configuration management for CLAIF framework."""
+
+import contextlib
+import json
+import os
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from src.claif.common.errors import ConfigurationError
+from src.claif.common.types import Provider
+
+
+@dataclass
+class ProviderConfig:
+    """Configuration for a specific provider."""
+
+    enabled: bool = True
+    model: str | None = None
+    api_key_env: str | None = None
+    timeout: int = 120
+    extra: dict[str, Any] = None
+
+    def __post_init__(self):
+        if self.extra is None:
+            self.extra = {}
+
+
+@dataclass
+class Config:
+    """Main configuration for CLAIF."""
+
+    default_provider: Provider = Provider.CLAUDE
+    providers: dict[str, ProviderConfig] = None
+    cache_enabled: bool = True
+    cache_ttl: int = 3600
+    session_dir: str | None = None
+    verbose: bool = False
+    output_format: str = "text"
+    retry_config: dict[str, Any] = None
+    mcp_servers: dict[str, Any] = None
+
+    def __post_init__(self):
+        if self.providers is None:
+            self.providers = {
+                Provider.CLAUDE: ProviderConfig(api_key_env="ANTHROPIC_API_KEY"),
+                Provider.GEMINI: ProviderConfig(api_key_env="GEMINI_API_KEY"),
+                Provider.CODEX: ProviderConfig(model="o4-mini"),
+            }
+        if self.retry_config is None:
+            self.retry_config = {"count": 3, "delay": 1.0, "backoff": 2.0}
+        if self.mcp_servers is None:
+            self.mcp_servers = {}
+        if self.session_dir is None:
+            self.session_dir = str(Path.home() / ".claif" / "sessions")
+
+
+def load_config(config_file: str | None = None) -> Config:
+    """Load configuration from file and environment."""
+    config = Config()
+
+    # Load from default locations
+    config_paths = [
+        Path.home() / ".claif" / "config.json",
+        Path.home() / ".config" / "claif" / "config.json",
+        Path("claif.json"),
+    ]
+
+    if config_file:
+        config_paths.insert(0, Path(config_file))
+
+    # Load from file
+    for path in config_paths:
+        if path.exists():
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+                    config = merge_config(config, data)
+                break
+            except Exception as e:
+                msg = f"Failed to load config from {path}: {e}"
+                raise ConfigurationError(msg)
+
+    # Override with environment variables
+    return load_env_config(config)
+
+
+def merge_config(base: Config, overrides: dict[str, Any]) -> Config:
+    """Merge configuration overrides into base config."""
+    base_dict = asdict(base)
+
+    def deep_merge(d1: dict, d2: dict) -> dict:
+        result = d1.copy()
+        for key, value in d2.items():
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                result[key] = deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+
+    merged = deep_merge(base_dict, overrides)
+
+    # Handle provider configs
+    if "providers" in merged:
+        for provider, pconfig in merged["providers"].items():
+            if isinstance(pconfig, dict):
+                merged["providers"][provider] = ProviderConfig(**pconfig)
+
+    return Config(**merged)
+
+
+def load_env_config(config: Config) -> Config:
+    """Load configuration from environment variables."""
+    # Default provider
+    if env_provider := os.getenv("CLAIF_DEFAULT_PROVIDER"):
+        with contextlib.suppress(ValueError):
+            config.default_provider = Provider(env_provider.lower())
+
+    # Verbose mode
+    if os.getenv("CLAIF_VERBOSE", "").lower() in ("true", "1", "yes"):
+        config.verbose = True
+
+    # Output format
+    if env_format := os.getenv("CLAIF_OUTPUT_FORMAT"):
+        config.output_format = env_format
+
+    # Cache settings
+    if os.getenv("CLAIF_CACHE_ENABLED", "").lower() in ("false", "0", "no"):
+        config.cache_enabled = False
+
+    if cache_ttl := os.getenv("CLAIF_CACHE_TTL"):
+        with contextlib.suppress(ValueError):
+            config.cache_ttl = int(cache_ttl)
+
+    # Session directory
+    if session_dir := os.getenv("CLAIF_SESSION_DIR"):
+        config.session_dir = session_dir
+
+    return config
+
+
+def save_config(config: Config, path: str | None = None) -> None:
+    """Save configuration to file."""
+    path = Path.home() / ".claif" / "config.json" if path is None else Path(path)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, "w") as f:
+        json.dump(asdict(config), f, indent=2)
+</file>
+
+<file path="src/claif/common/errors.py">
+"""Common error types for CLAIF framework."""
+
+from typing import Any
+
+
+class ClaifError(Exception):
+    """Base exception for CLAIF framework."""
+
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
+        super().__init__(message)
+        self.message = message
+        self.details = details or {}
+
+
+class ProviderError(ClaifError):
+    """Error from a specific provider."""
+
+    def __init__(self, provider: str, message: str, details: dict[str, Any] | None = None):
+        super().__init__(f"{provider}: {message}", details)
+        self.provider = provider
+
+
+class ConfigurationError(ClaifError):
+    """Configuration-related error."""
+
+
+class SessionError(ClaifError):
+    """Session management error."""
+
+
+class TransportError(ClaifError):
+    """Transport layer error."""
+
+
+class ClaifTimeoutError(ClaifError):
+    """Operation timeout error."""
+
+
+class ValidationError(ClaifError):
+    """Input validation error."""
+</file>
+
+<file path="src/claif/common/types.py">
+"""Common type definitions for CLAIF framework."""
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
+
+class Provider(str, Enum):
+    """Supported LLM providers."""
+
+    CLAUDE = "claude"
+    GEMINI = "gemini"
+    CODEX = "codex"
+
+
+class MessageRole(str, Enum):
+    """Message roles."""
+
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+    RESULT = "result"
+
+
+@dataclass
+class TextBlock:
+    """Text content block."""
+
+    type: str = "text"
+    text: str = ""
+
+
+@dataclass
+class ToolUseBlock:
+    """Tool use content block."""
+
+    type: str = "tool_use"
+    id: str = ""
+    name: str = ""
+    input: dict[str, Any] = None
+
+    def __post_init__(self):
+        if self.input is None:
+            self.input = {}
+
+
+@dataclass
+class ToolResultBlock:
+    """Tool result content block."""
+
+    type: str = "tool_result"
+    tool_use_id: str = ""
+    content: list[TextBlock | Any] = None
+    is_error: bool = False
+
+    def __post_init__(self):
+        if self.content is None:
+            self.content = []
+
+
+ContentBlock = Union[TextBlock, ToolUseBlock, ToolResultBlock]
+
+
+@dataclass
+class Message:
+    """Base message class."""
+
+    role: MessageRole
+    content: str | list[ContentBlock]
+
+    def __post_init__(self):
+        if isinstance(self.content, str):
+            self.content = [TextBlock(text=self.content)]
+
+
+@dataclass
+class ClaifOptions:
+    """Common options for CLAIF queries."""
+
+    provider: Provider | None = None
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    system_prompt: str | None = None
+    timeout: int | None = None
+    verbose: bool = False
+    output_format: str = "text"
+    config_file: str | None = None
+    session_id: str | None = None
+    cache: bool = False
+    retry_count: int = 3
+    retry_delay: float = 1.0
+
+
+@dataclass
+class ResponseMetrics:
+    """Metrics for a response."""
+
+    duration: float = 0.0
+    tokens_used: int = 0
+    cost: float = 0.0
+    provider: Provider | None = None
+    model: str | None = None
+    cached: bool = False
+
+
+@dataclass
+class ClaifResponse:
+    """Response from a CLAIF query."""
+
+    messages: list[Message]
+    metrics: ResponseMetrics | None = None
+    session_id: str | None = None
+    error: str | None = None
+</file>
+
+<file path="src/claif/common/utils.py">
+"""Common utilities for CLAIF framework."""
+
+import logging
+import time
+from pathlib import Path
+from typing import Any, List
+
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+
+from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
+
+
+def get_logger(name: str, verbose: bool = False) -> logging.Logger:
+    """Get a configured logger."""
+    logger = logging.getLogger(name)
+
+    if not logger.handlers:
+        level = logging.DEBUG if verbose else logging.INFO
+        handler = RichHandler(
+            rich_tracebacks=True,
+            show_time=False,
+            show_path=False,
+        )
+        handler.setLevel(level)
+        logger.addHandler(handler)
+        logger.setLevel(level)
+
+    return logger
+
+
+def format_response(message: Message, format: str = "text", syntax_highlighting: bool = True) -> str:
+    """Format a message for display."""
+    if format == "json":
+        import json
+
+        return json.dumps(message_to_dict(message), indent=2)
+
+    # Extract text content
+    text_parts = []
+    if isinstance(message.content, str):
+        text_parts.append(message.content)
+    else:
+        for block in message.content:
+            if isinstance(block, TextBlock):
+                text_parts.append(block.text)
+
+    text = "\n".join(text_parts)
+
+    if format == "markdown" and syntax_highlighting:
+        # Basic markdown rendering
+        console = Console()
+        with console.capture() as capture:
+            console.print(text)
+        return capture.get()
+
+    return text
+
+
+def message_to_dict(message: Message) -> dict:
+    """Convert a message to a dictionary."""
+    content = message.content
+    if isinstance(content, list):
+        content = [block_to_dict(block) for block in content]
+
+    return {
+        "role": message.role.value,
+        "content": content,
+    }
+
+
+def block_to_dict(block: ContentBlock) -> dict:
+    """Convert a content block to a dictionary."""
+    if isinstance(block, TextBlock):
+        return {"type": "text", "text": block.text}
+    if hasattr(block, "__dict__"):
+        return block.__dict__
+    return {"type": "unknown", "data": str(block)}
+
+
+def format_metrics(metrics: ResponseMetrics) -> str:
+    """Format response metrics for display."""
+    table = Table(title="Response Metrics", show_header=False)
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+
+    table.add_row("Duration", f"{metrics.duration:.2f}s")
+    table.add_row("Tokens", str(metrics.tokens_used))
+    table.add_row("Cost", f"${metrics.cost:.4f}")
+    table.add_row("Provider", metrics.provider.value if metrics.provider else "N/A")
+    table.add_row("Model", metrics.model or "N/A")
+    table.add_row("Cached", "Yes" if metrics.cached else "No")
+
+    console = Console()
+    with console.capture() as capture:
+        console.print(table)
+    return capture.get()
+
+
+def create_progress_bar(description: str = "Processing...") -> Progress:
+    """Create a progress bar for long operations."""
+    return Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        transient=True,
+    )
+
+
+def ensure_directory(path: Path) -> None:
+    """Ensure a directory exists."""
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def timestamp() -> str:
+    """Get current timestamp as string."""
+    return time.strftime("%Y%m%d_%H%M%S")
+
+
+def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
+    """Truncate text to maximum length."""
+    if len(text) <= max_length:
+        return text
+    return text[: max_length - len(suffix)] + suffix
+
+
+def parse_content_blocks(content: Any) -> list[ContentBlock]:
+    """Parse various content formats into content blocks."""
+    if isinstance(content, str):
+        return [TextBlock(text=content)]
+    if isinstance(content, list):
+        blocks = []
+        for item in content:
+            if isinstance(item, TextBlock):
+                blocks.append(item)
+            elif isinstance(item, dict):
+                if item.get("type") == "text":
+                    blocks.append(TextBlock(text=item.get("text", "")))
+            else:
+                blocks.append(TextBlock(text=str(item)))
+        return blocks
+    return [TextBlock(text=str(content))]
+</file>
+
+<file path="src/claif/providers/__init__.py">
+"""Provider implementations for CLAIF."""
+
+from .claude import ClaudeProvider
+from .codex import CodexProvider
+from .gemini import GeminiProvider
+
+__all__ = ["ClaudeProvider", "CodexProvider", "GeminiProvider"]
+</file>
+
+<file path="src/claif/providers/claude.py">
+"""Claude provider implementation."""
+
+from collections.abc import AsyncIterator
+
+from src.claif.common import ClaifOptions, Message, get_logger
+from src.claif_cla import query as claude_query
+
+logger = get_logger(__name__)
+
+
+class ClaudeProvider:
+    """Claude provider for CLAIF."""
+
+    def __init__(self):
+        self.name = "claude"
+
+    async def query(
+        self,
+        prompt: str,
+        options: ClaifOptions,
+    ) -> AsyncIterator[Message]:
+        """Query Claude."""
+        logger.debug(f"Claude provider: {prompt[:50]}...")
+
+        async for message in claude_query(prompt, options):
+            yield message
+</file>
+
+<file path="src/claif/providers/codex.py">
+"""Codex provider implementation."""
+
+from collections.abc import AsyncIterator
+
+from src.claif.common import ClaifOptions, Message, get_logger
+from src.claif_cod import query as codex_query
+
+logger = get_logger(__name__)
+
+
+class CodexProvider:
+    """Codex provider for CLAIF."""
+
+    def __init__(self):
+        self.name = "codex"
+
+    async def query(
+        self,
+        prompt: str,
+        options: ClaifOptions,
+    ) -> AsyncIterator[Message]:
+        """Query Codex."""
+        logger.debug(f"Codex provider: {prompt[:50]}...")
+
+        async for message in codex_query(prompt, options):
+            yield message
+</file>
+
+<file path="src/claif/providers/gemini.py">
+"""Gemini provider implementation."""
+
+from collections.abc import AsyncIterator
+
+from src.claif.common import ClaifOptions, Message, get_logger
+from src.claif_gem import query as gemini_query
+
+logger = get_logger(__name__)
+
+
+class GeminiProvider:
+    """Gemini provider for CLAIF."""
+
+    def __init__(self):
+        self.name = "gemini"
+
+    async def query(
+        self,
+        prompt: str,
+        options: ClaifOptions,
+    ) -> AsyncIterator[Message]:
+        """Query Gemini."""
+        logger.debug(f"Gemini provider: {prompt[:50]}...")
+
+        async for message in gemini_query(prompt, options):
+            yield message
+</file>
+
+<file path="src/claif/__init__.py">
+"""CLAIF - Command Line Artificial Intelligence Framework."""
+
+from src.claif.common import (
+    ClaifError,
+    ClaifOptions,
+    ClaifResponse,
+    Config,
+    ConfigurationError,
+    Message,
+    Provider,
+    ProviderError,
+    ResponseMetrics,
+    TextBlock,
+    ToolResultBlock,
+    ToolUseBlock,
+    load_config,
+)
+
+__version__ = "0.1.0"
+
+__all__ = [
+    "ClaifError",
+    "ClaifOptions",
+    "ClaifResponse",
+    "Config",
+    "ConfigurationError",
+    "Message",
+    "Provider",
+    "ProviderError",
+    "ResponseMetrics",
+    "TextBlock",
+    "ToolResultBlock",
+    "ToolUseBlock",
+    "load_config",
+]
+</file>
+
+<file path="src/claif/cli.py">
+"""Fire-based CLI for unified CLAIF wrapper."""
+
+import asyncio
+import sys
+import time
+
+import fire
+from rich.columns import Columns
+from rich.console import Console
+from rich.live import Live
+from rich.panel import Panel
+from rich.table import Table
+
+from .client import _client, query, query_all, query_random
+from .common import (
+    ClaifOptions,
+    Provider,
+    ResponseMetrics,
+    format_metrics,
+    format_response,
+    get_logger,
+    load_config,
+    save_config,
+)
+from .server import start_mcp_server
+
+logger = get_logger(__name__)
+console = Console()
+
+
+class ClaifCLI:
+    """Unified CLAIF CLI with Fire interface."""
+
+    def __init__(self, config_file: str | None = None, verbose: bool = False):
+        """Initialize CLI with optional config file."""
+        self.config = load_config(config_file)
+        if verbose:
+            self.config.verbose = True
+        self.client = _client
+        logger.debug("Initialized CLAIF CLI")
+
+    def query(
+        self,
+        prompt: str,
+        provider: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        system: str | None = None,
+        timeout: int | None = None,
+        output_format: str = "text",
+        show_metrics: bool = False,
+        cache: bool = True,
+    ) -> None:
+        """Execute a query to specified provider.
+
+        Args:
+            prompt: The prompt to send
+            provider: Provider to use (claude, gemini, codex)
+            model: Model to use (provider-specific)
+            temperature: Sampling temperature (0-1)
+            max_tokens: Maximum tokens in response
+            system: System prompt
+            timeout: Timeout in seconds
+            output_format: Output format (text, json, markdown)
+            show_metrics: Show response metrics
+            cache: Enable response caching
+        """
+        # Parse provider
+        provider_enum = None
+        if provider:
+            try:
+                provider_enum = Provider(provider.lower())
+            except ValueError:
+                console.print(f"[red]Unknown provider: {provider}[/red]")
+                console.print(f"Available providers: {', '.join(p.value for p in Provider)}")
+                sys.exit(1)
+
+        options = ClaifOptions(
+            provider=provider_enum or self.config.default_provider,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            system_prompt=system,
+            timeout=timeout,
+            output_format=output_format,
+            cache=cache,
+            verbose=self.config.verbose,
+        )
+
+        start_time = time.time()
+
+        try:
+            # Run async query
+            messages = asyncio.run(self._query_async(prompt, options))
+
+            # Format and display response
+            for message in messages:
+                formatted = format_response(message, output_format)
+                console.print(formatted)
+
+            # Show metrics if requested
+            if show_metrics:
+                duration = time.time() - start_time
+                metrics = ResponseMetrics(
+                    duration=duration,
+                    provider=options.provider,
+                    model=model or "default",
+                )
+                console.print("\n" + format_metrics(metrics))
+
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            if self.config.verbose:
+                console.print_exception()
+            sys.exit(1)
+
+    async def _query_async(self, prompt: str, options: ClaifOptions) -> list:
+        """Execute async query and collect messages."""
+        messages = []
+        async for message in query(prompt, options):
+            messages.append(message)
+        return messages
+
+    def stream(
+        self,
+        prompt: str,
+        provider: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        system: str | None = None,
+    ) -> None:
+        """Stream responses with live display.
+
+        Args:
+            prompt: The prompt to send
+            provider: Provider to use
+            model: Model to use
+            temperature: Sampling temperature (0-1)
+            system: System prompt
+        """
+        # Parse provider
+        provider_enum = None
+        if provider:
+            try:
+                provider_enum = Provider(provider.lower())
+            except ValueError:
+                console.print(f"[red]Unknown provider: {provider}[/red]")
+                sys.exit(1)
+
+        options = ClaifOptions(
+            provider=provider_enum or self.config.default_provider,
+            model=model,
+            temperature=temperature,
+            system_prompt=system,
+            verbose=self.config.verbose,
+        )
+
+        try:
+            asyncio.run(self._stream_async(prompt, options))
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Stream interrupted[/yellow]")
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            if self.config.verbose:
+                console.print_exception()
+            sys.exit(1)
+
+    async def _stream_async(self, prompt: str, options: ClaifOptions) -> None:
+        """Stream responses with live display."""
+        content_buffer = []
+
+        provider_name = options.provider.value if options.provider else "default"
+
+        with Live(console=console, refresh_per_second=10) as live:
+            live.update(f"[dim]Streaming from {provider_name}...[/dim]")
+
+            async for message in query(prompt, options):
+                # Update live display
+                if isinstance(message.content, str):
+                    content_buffer.append(message.content)
+                elif isinstance(message.content, list):
+                    for block in message.content:
+                        if hasattr(block, "text"):
+                            content_buffer.append(block.text)
+
+                live.update("".join(content_buffer))
+
+    def random(
+        self,
+        prompt: str,
+        model: str | None = None,
+        temperature: float | None = None,
+        system: str | None = None,
+        show_provider: bool = True,
+    ) -> None:
+        """Query a random provider.
+
+        Args:
+            prompt: The prompt to send
+            model: Model to use (if supported by selected provider)
+            temperature: Sampling temperature (0-1)
+            system: System prompt
+            show_provider: Show which provider was selected
+        """
+        options = ClaifOptions(
+            model=model,
+            temperature=temperature,
+            system_prompt=system,
+            verbose=self.config.verbose,
+        )
+
+        try:
+            # Track which provider was used
+            selected_provider = None
+
+            async def track_provider():
+                messages = []
+                async for message in query_random(prompt, options):
+                    messages.append(message)
+                # Get provider from options after random selection
+                nonlocal selected_provider
+                selected_provider = options.provider
+                return messages
+
+            messages = asyncio.run(track_provider())
+
+            if show_provider and selected_provider:
+                console.print(f"[cyan]Selected provider: {selected_provider.value}[/cyan]\n")
+
+            for message in messages:
+                console.print(format_response(message))
+
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            if self.config.verbose:
+                console.print_exception()
+            sys.exit(1)
+
+    def parallel(
+        self,
+        prompt: str,
+        model: str | None = None,
+        temperature: float | None = None,
+        system: str | None = None,
+        compare: bool = False,
+    ) -> None:
+        """Query all providers in parallel.
+
+        Args:
+            prompt: The prompt to send
+            model: Model to use (provider-specific defaults apply)
+            temperature: Sampling temperature (0-1)
+            system: System prompt
+            compare: Show responses side-by-side for comparison
+        """
+        options = ClaifOptions(
+            model=model,
+            temperature=temperature,
+            system_prompt=system,
+            verbose=self.config.verbose,
+        )
+
+        try:
+            results = asyncio.run(self._parallel_query(prompt, options))
+
+            if compare:
+                # Show side-by-side comparison
+                panels = []
+                for provider, messages in results.items():
+                    content = (
+                        "\n".join(format_response(msg) for msg in messages) if messages else "[dim]No response[/dim]"
+                    )
+
+                    panel = Panel(
+                        content,
+                        title=f"[bold]{provider.value}[/bold]",
+                        border_style="cyan" if messages else "red",
+                    )
+                    panels.append(panel)
+
+                console.print(Columns(panels, equal=True, expand=True))
+            else:
+                # Show responses sequentially
+                for provider, messages in results.items():
+                    console.print(f"\n[bold cyan]{provider.value}:[/bold cyan]")
+
+                    if messages:
+                        for message in messages:
+                            console.print(format_response(message))
+                    else:
+                        console.print("[dim]No response or error occurred[/dim]")
+
+                    console.print("-" * 50)
+
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            if self.config.verbose:
+                console.print_exception()
+            sys.exit(1)
+
+    async def _parallel_query(self, prompt: str, options: ClaifOptions) -> dict:
+        """Execute parallel queries."""
+        async for results in query_all(prompt, options):
+            return results
+        return None
+
+    def providers(self, action: str = "list") -> None:
+        """Manage providers.
+
+        Args:
+            action: Action to perform (list, status)
+        """
+        if action == "list":
+            console.print("[bold]Available Providers:[/bold]")
+
+            table = Table(show_header=True, header_style="bold cyan")
+            table.add_column("Provider", style="green")
+            table.add_column("Status")
+            table.add_column("Default Model")
+
+            for provider in Provider:
+                provider_config = self.config.providers.get(provider.value, {})
+
+                if hasattr(provider_config, "enabled"):
+                    enabled = provider_config.enabled
+                    model = provider_config.model or "default"
+                else:
+                    enabled = provider_config.get("enabled", True)
+                    model = provider_config.get("model", "default")
+
+                status = "[green]Enabled[/green]" if enabled else "[red]Disabled[/red]"
+
+                # Mark default provider
+                if provider == self.config.default_provider:
+                    status += " [yellow](default)[/yellow]"
+
+                table.add_row(provider.value, status, model)
+
+            console.print(table)
+
+        elif action == "status":
+            # Check health of each provider
+            console.print("[bold]Provider Health Check:[/bold]")
+
+            async def check_provider(provider: Provider) -> tuple[Provider, bool]:
+                try:
+                    options = ClaifOptions(
+                        provider=provider,
+                        max_tokens=10,
+                        timeout=5,
+                    )
+                    message_count = 0
+                    async for _ in query("Hello", options):
+                        message_count += 1
+                        break
+                    return provider, message_count > 0
+                except Exception:
+                    return provider, False
+
+            async def check_all():
+                tasks = [check_provider(p) for p in Provider]
+                return await asyncio.gather(*tasks)
+
+            results = asyncio.run(check_all())
+
+            for provider, healthy in results:
+                status = "[green]✓ Healthy[/green]" if healthy else "[red]✗ Unhealthy[/red]"
+                console.print(f"  {provider.value}: {status}")
+
+        else:
+            console.print(f"[red]Unknown action: {action}[/red]")
+            console.print("Available actions: list, status")
+
+    def server(
+        self,
+        host: str = "localhost",
+        port: int = 8000,
+        reload: bool = False,
+    ) -> None:
+        """Start the FastMCP server.
+
+        Args:
+            host: Host to bind to
+            port: Port to bind to
+            reload: Enable auto-reload for development
+        """
+        console.print("[bold]Starting CLAIF MCP Server[/bold]")
+        console.print(f"Host: {host}")
+        console.print(f"Port: {port}")
+        console.print(f"Reload: {reload}")
+        console.print("\n[yellow]Press Ctrl+C to stop[/yellow]")
+
+        try:
+            start_mcp_server(host, port, reload, self.config)
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Server stopped[/yellow]")
+        except Exception as e:
+            console.print(f"[red]Server error: {e}[/red]")
+            sys.exit(1)
+
+    def config(self, action: str = "show", **kwargs) -> None:
+        """Manage CLAIF configuration.
+
+        Args:
+            action: Action to perform (show, set, save)
+            **kwargs: Configuration values for 'set' action
+        """
+        if action == "show":
+            console.print("[bold]CLAIF Configuration:[/bold]")
+            console.print(f"  Default Provider: {self.config.default_provider.value}")
+            console.print(f"  Cache Enabled: {self.config.cache_enabled}")
+            console.print(f"  Cache TTL: {self.config.cache_ttl}s")
+            console.print(f"  Session Directory: {self.config.session_dir}")
+            console.print(f"  Verbose: {self.config.verbose}")
+            console.print(f"  Output Format: {self.config.output_format}")
+
+            console.print("\n[bold]Provider Settings:[/bold]")
+            for provider_name, provider_config in self.config.providers.items():
+                console.print(f"\n  {provider_name}:")
+                if hasattr(provider_config, "__dict__"):
+                    for key, value in provider_config.__dict__.items():
+                        if key != "extra":
+                            console.print(f"    {key}: {value}")
+
+        elif action == "set":
+            if not kwargs:
+                console.print("[red]No configuration values provided[/red]")
+                return
+
+            # Update configuration
+            for key, value in kwargs.items():
+                if key == "default_provider":
+                    try:
+                        self.config.default_provider = Provider(value.lower())
+                        console.print(f"[green]Set default provider: {value}[/green]")
+                    except ValueError:
+                        console.print(f"[red]Invalid provider: {value}[/red]")
+                elif hasattr(self.config, key):
+                    setattr(self.config, key, value)
+                    console.print(f"[green]Set {key}: {value}[/green]")
+                else:
+                    console.print(f"[yellow]Unknown setting: {key}[/yellow]")
+
+        elif action == "save":
+            path = kwargs.get("path")
+            save_config(self.config, path)
+            saved_path = path or "~/.claif/config.json"
+            console.print(f"[green]Configuration saved to: {saved_path}[/green]")
+
+        else:
+            console.print(f"[red]Unknown action: {action}[/red]")
+            console.print("Available actions: show, set, save")
+
+    def session(self, provider: str, *args, **kwargs) -> None:
+        """Start a provider-specific session.
+
+        Args:
+            provider: Provider to use (claude, gemini, codex)
+            *args: Arguments to pass to provider CLI
+            **kwargs: Keyword arguments to pass to provider CLI
+        """
+        # Import the appropriate CLI module
+        if provider == "claude":
+            from ..claif_cla.cli import ClaudeCLI
+
+            cli = ClaudeCLI(verbose=self.config.verbose)
+        elif provider == "gemini":
+            from ..claif_gem.cli import GeminiCLI
+
+            cli = GeminiCLI(verbose=self.config.verbose)
+        elif provider == "codex":
+            from ..claif_cod.cli import CodexCLI
+
+            cli = CodexCLI(verbose=self.config.verbose)
+        else:
+            console.print(f"[red]Unknown provider: {provider}[/red]")
+            console.print("Available providers: claude, gemini, codex")
+            return
+
+        # Start interactive session
+        console.print(f"[bold]Starting {provider} session...[/bold]")
+
+        # If the provider CLI has an interactive method, use it
+        if hasattr(cli, "interactive"):
+            cli.interactive()
+        else:
+            console.print(f"[yellow]Interactive mode not available for {provider}[/yellow]")
+
+
+def main():
+    """Main entry point for Fire CLI."""
+    fire.Fire(ClaifCLI)
+</file>
+
+<file path="src/claif/client.py">
+"""Unified client for CLAIF."""
+
+import random
+from collections.abc import AsyncIterator
+from .common import ClaifOptions, Message, Provider, ProviderError, get_logger
+from .providers import ClaudeProvider, CodexProvider, GeminiProvider
+
+logger = get_logger(__name__)
+
+
+class ClaifClient:
+    """Unified client for all providers."""
+
+    def __init__(self):
+        self.providers: dict[Provider, object] = {
+            Provider.CLAUDE: ClaudeProvider(),
+            Provider.GEMINI: GeminiProvider(),
+            Provider.CODEX: CodexProvider(),
+        }
+
+    async def query(
+        self,
+        prompt: str,
+        options: ClaifOptions | None = None,
+    ) -> AsyncIterator[Message]:
+        """Query using specified or default provider."""
+        if options is None:
+            options = ClaifOptions()
+
+        provider = options.provider or Provider.CLAUDE
+
+        if provider not in self.providers:
+            raise ProviderError(
+                provider.value,
+                f"Unknown provider: {provider}",
+            )
+
+        provider_instance = self.providers[provider]
+        logger.info(f"Using provider: {provider.value}")
+
+        async for message in provider_instance.query(prompt, options):
+            yield message
+
+    async def query_random(
+        self,
+        prompt: str,
+        options: ClaifOptions | None = None,
+    ) -> AsyncIterator[Message]:
+        """Query using a random provider."""
+        if options is None:
+            options = ClaifOptions()
+
+        # Select random provider
+        provider = random.choice(list(self.providers.keys()))
+        options.provider = provider
+
+        logger.info(f"Randomly selected provider: {provider.value}")
+
+        async for message in self.query(prompt, options):
+            yield message
+
+    async def query_all(
+        self,
+        prompt: str,
+        options: ClaifOptions | None = None,
+    ) -> AsyncIterator[dict[Provider, list[Message]]]:
+        """Query all providers in parallel."""
+        if options is None:
+            options = ClaifOptions()
+
+        import asyncio
+
+        async def query_provider(provider: Provider) -> tuple[Provider, list[Message]]:
+            """Query a single provider and collect messages."""
+            provider_options = ClaifOptions(**options.__dict__)
+            provider_options.provider = provider
+
+            messages = []
+            try:
+                async for message in self.query(prompt, provider_options):
+                    messages.append(message)
+            except Exception as e:
+                logger.error(f"Provider {provider.value} failed: {e}")
+                # Return empty list on failure
+                messages = []
+
+            return provider, messages
+
+        # Query all providers in parallel
+        tasks = [query_provider(provider) for provider in self.providers]
+
+        results = await asyncio.gather(*tasks)
+
+        # Convert to dict
+        provider_messages = dict(results)
+
+        yield provider_messages
+
+    def list_providers(self) -> list[Provider]:
+        """List available providers."""
+        return list(self.providers.keys())
+
+
+# Module-level client instance
+_client = ClaifClient()
+
+
+async def query(
+    prompt: str,
+    options: ClaifOptions | None = None,
+) -> AsyncIterator[Message]:
+    """Query using the default client."""
+    async for message in _client.query(prompt, options):
+        yield message
+
+
+async def query_random(
+    prompt: str,
+    options: ClaifOptions | None = None,
+) -> AsyncIterator[Message]:
+    """Query using a random provider."""
+    async for message in _client.query_random(prompt, options):
+        yield message
+
+
+async def query_all(
+    prompt: str,
+    options: ClaifOptions | None = None,
+) -> AsyncIterator[dict[Provider, list[Message]]]:
+    """Query all providers in parallel."""
+    async for results in _client.query_all(prompt, options):
+        yield results
+</file>
+
+<file path="src/claif/server.py">
+"""FastMCP server for CLAIF."""
+
+import asyncio
+from typing import Any
+
+from fastmcp import FastMCP
+from pydantic import BaseModel
+
+from .client import query, query_all, query_random
+from .common import ClaifOptions, Config, Provider, get_logger
+
+logger = get_logger(__name__)
+
+
+# Pydantic models for MCP
+class QueryRequest(BaseModel):
+    """Request model for query endpoint."""
+
+    prompt: str
+    provider: str | None = None
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    system_prompt: str | None = None
+    timeout: int | None = None
+    cache: bool = True
+
+
+class QueryResponse(BaseModel):
+    """Response model for query endpoint."""
+
+    messages: list[dict[str, Any]]
+    provider: str
+    model: str | None = None
+    error: str | None = None
+
+
+class ProviderInfo(BaseModel):
+    """Provider information model."""
+
+    name: str
+    enabled: bool
+    default_model: str | None = None
+
+
+# Create FastMCP server
+mcp = FastMCP("CLAIF MCP Server")
+
+
+@mcp.tool()
+async def claif_query(request: QueryRequest) -> QueryResponse:
+    """Query a specific LLM provider through CLAIF.
+
+    Args:
+        request: Query request with prompt and options
+
+    Returns:
+        Response with messages from the provider
+    """
+    try:
+        # Parse provider
+        provider_enum = None
+        if request.provider:
+            try:
+                provider_enum = Provider(request.provider.lower())
+            except ValueError:
+                return QueryResponse(
+                    messages=[],
+                    provider=request.provider or "unknown",
+                    error=f"Unknown provider: {request.provider}",
+                )
+
+        # Create options
+        options = ClaifOptions(
+            provider=provider_enum,
+            model=request.model,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            system_prompt=request.system_prompt,
+            timeout=request.timeout,
+            cache=request.cache,
+        )
+
+        # Execute query
+        messages = []
+        async for message in query(request.prompt, options):
+            messages.append(
+                {
+                    "role": message.role.value,
+                    "content": message.content if isinstance(message.content, str) else str(message.content),
+                }
+            )
+
+        return QueryResponse(
+            messages=messages,
+            provider=provider_enum.value if provider_enum else "default",
+            model=request.model,
+        )
+
+    except Exception as e:
+        logger.error(f"Query error: {e}")
+        return QueryResponse(
+            messages=[],
+            provider=request.provider or "unknown",
+            error=str(e),
+        )
+
+
+@mcp.tool()
+async def claif_query_random(request: QueryRequest) -> QueryResponse:
+    """Query a random LLM provider through CLAIF.
+
+    Args:
+        request: Query request with prompt and options
+
+    Returns:
+        Response with messages from a randomly selected provider
+    """
+    try:
+        # Create options (without provider)
+        options = ClaifOptions(
+            model=request.model,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            system_prompt=request.system_prompt,
+            timeout=request.timeout,
+            cache=request.cache,
+        )
+
+        # Track selected provider
+        selected_provider = None
+
+        # Execute random query
+        messages = []
+        async for message in query_random(request.prompt, options):
+            messages.append(
+                {
+                    "role": message.role.value,
+                    "content": message.content if isinstance(message.content, str) else str(message.content),
+                }
+            )
+            # Get the selected provider from options
+            if options.provider and not selected_provider:
+                selected_provider = options.provider.value
+
+        return QueryResponse(
+            messages=messages,
+            provider=selected_provider or "unknown",
+            model=request.model,
+        )
+
+    except Exception as e:
+        logger.error(f"Random query error: {e}")
+        return QueryResponse(
+            messages=[],
+            provider="unknown",
+            error=str(e),
+        )
+
+
+@mcp.tool()
+async def claif_query_all(request: QueryRequest) -> dict[str, QueryResponse]:
+    """Query all LLM providers in parallel through CLAIF.
+
+    Args:
+        request: Query request with prompt and options
+
+    Returns:
+        Dictionary mapping provider names to their responses
+    """
+    try:
+        # Create options
+        options = ClaifOptions(
+            model=request.model,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            system_prompt=request.system_prompt,
+            timeout=request.timeout,
+            cache=request.cache,
+        )
+
+        # Execute parallel query
+        results = {}
+        async for provider_results in query_all(request.prompt, options):
+            for provider, messages in provider_results.items():
+                message_dicts = []
+                for message in messages:
+                    message_dicts.append(
+                        {
+                            "role": message.role.value,
+                            "content": message.content if isinstance(message.content, str) else str(message.content),
+                        }
+                    )
+
+                results[provider.value] = QueryResponse(
+                    messages=message_dicts,
+                    provider=provider.value,
+                    model=request.model,
+                )
+
+        return results
+
+    except Exception as e:
+        logger.error(f"Parallel query error: {e}")
+        return {
+            "error": QueryResponse(
+                messages=[],
+                provider="all",
+                error=str(e),
+            )
+        }
+
+
+@mcp.tool()
+async def claif_list_providers() -> list[ProviderInfo]:
+    """List all available LLM providers in CLAIF.
+
+    Returns:
+        List of provider information
+    """
+    providers = []
+
+    for provider in Provider:
+        # Get provider config from global config if available
+        providers.append(
+            ProviderInfo(
+                name=provider.value,
+                enabled=True,  # All providers are enabled by default
+                default_model=None,  # Could be enhanced with config lookup
+            )
+        )
+
+    return providers
+
+
+@mcp.tool()
+async def claif_health_check(provider: str | None = None) -> dict[str, bool]:
+    """Check health of CLAIF providers.
+
+    Args:
+        provider: Specific provider to check, or None for all
+
+    Returns:
+        Dictionary mapping provider names to health status
+    """
+
+    async def check_provider(prov: Provider) -> tuple[str, bool]:
+        try:
+            options = ClaifOptions(
+                provider=prov,
+                max_tokens=10,
+                timeout=5,
+            )
+            message_count = 0
+            async for _ in query("Hello", options):
+                message_count += 1
+                if message_count > 0:
+                    break
+            return prov.value, message_count > 0
+        except Exception:
+            return prov.value, False
+
+    if provider:
+        try:
+            provider_enum = Provider(provider.lower())
+            name, healthy = await check_provider(provider_enum)
+            return {name: healthy}
+        except ValueError:
+            return {provider: False}
+    else:
+        # Check all providers
+        tasks = [check_provider(p) for p in Provider]
+        results = await asyncio.gather(*tasks)
+        return dict(results)
+
+
+def start_mcp_server(
+    host: str = "localhost",
+    port: int = 8000,
+    reload: bool = False,
+    config: Config | None = None,
+) -> None:
+    """Start the FastMCP server.
+
+    Args:
+        host: Host to bind to
+        port: Port to bind to
+        reload: Enable auto-reload
+        config: CLAIF configuration
+    """
+    # Store config globally if provided
+    if config:
+        # Could be used to enhance provider info
+        logger.info(f"Using config with default provider: {config.default_provider}")
+
+    # Run the server
+    import uvicorn
+
+    uvicorn.run(
+        mcp,
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info" if logger.level <= 20 else "warning",
+    )
+
+
+def main():
+    """Main entry point for the MCP server."""
+    import fire
+
+    fire.Fire(start_mcp_server)
+</file>
+
+<file path="src/__init__.py">
+""""""
+
+import sys
+from importlib import metadata
+from typing import Any
+
+__version__ = metadata.version(__name__)
+
+# Enable package-style imports for plugins
+__path__ = []
+__package__ = "claif"
+
+
+class PluginFinder:
+    """Finder for claif plugins to enable package-style imports."""
+
+    @classmethod
+    def find_spec(cls, fullname, path, target=None):
+        if not fullname.startswith("claif."):
+            return None
+
+        plugin_name = fullname.split(".")[-1]
+        try:
+            eps = metadata.entry_points(group="claif.plugins")
+            for ep in eps:
+                if ep.name == plugin_name:
+                    # Create a spec that will load the plugin module
+                    from importlib.machinery import ModuleSpec
+                    from importlib.util import module_from_spec, spec_from_loader
+
+                    plugin_module = ep.load()
+
+                    class Loader:
+                        @staticmethod
+                        def create_module(spec):
+                            return plugin_module
+
+                        @staticmethod
+                        def exec_module(module):
+                            pass
+
+                    return ModuleSpec(fullname, Loader())
+        except Exception:
+            return None
+        return None
+
+
+# Register the finder
+sys.meta_path.insert(0, PluginFinder())
+
+
+def __getattr__(name: str) -> Any:
+    """Dynamic attribute lookup for plugins.
+
+    To register a plugin, add the following to your pyproject.toml:
+
+    [project.entry-points."claif.plugins"]
+    plugin_name = "plugin_module"  # Just point to the module
+
+    Args:
+        name: Name of plugin to load
+
+    Returns:
+        Loaded plugin module
+
+    Raises:
+        AttributeError: If plugin cannot be found or loaded
+    """
+    try:
+        eps = metadata.entry_points(group="claif.plugins")
+        for ep in eps:
+            if ep.name == name:
+                return ep.load()
+    except Exception as e:
+        msg = f"Failed to load plugin '{name}': {e}"
+        raise AttributeError(msg) from e
+
+    msg = f"module '{__name__}' has no attribute '{name}'"
+    raise AttributeError(msg)
+</file>
+
+<file path="tests/test_package.py">
+"""Test suite for claif."""
+
+
+def test_version():
+    """Verify package exposes version."""
+    import claif
+
+    assert claif.__version__
+</file>
+
+<file path=".gitignore">
+*_autogen/
+.DS_Store
+__version__.py
+__pycache__/
+_Chutzpah*
+_deps
+_NCrunch_*
+_pkginfo.txt
+_Pvt_Extensions
+_ReSharper*/
+_TeamCity*
+_UpgradeReport_Files/
+!?*.[Cc]ache/
+!.axoCover/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!**/[Pp]ackages/build/
+!Directory.Build.rsp
+.*crunch*.local.xml
+.axoCover/*
+.builds
+.cr/personal
+.fake/
+.history/
+.ionide/
+.localhistory/
+.mfractor/
+.ntvs_analysis.dat
+.paket/paket.exe
+.sass-cache/
+.vs/
+.vscode
+.vscode/*
+.vshistory/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Bb]in/
+[Bb]uild[Ll]og.*
+[Dd]ebug/
+[Dd]ebugPS/
+[Dd]ebugPublic/
+[Ee]xpress/
+[Ll]og/
+[Ll]ogs/
+[Oo]bj/
+[Rr]elease/
+[Rr]eleasePS/
+[Rr]eleases/
+[Tt]est[Rr]esult*/
+[Ww][Ii][Nn]32/
+*_h.h
+*_i.c
+*_p.c
+*_wpftmp.csproj
+*- [Bb]ackup ([0-9]).rdl
+*- [Bb]ackup ([0-9][0-9]).rdl
+*- [Bb]ackup.rdl
+*.[Cc]ache
+*.[Pp]ublish.xml
+*.[Rr]e[Ss]harper
+*.a
+*.app
+*.appx
+*.appxbundle
+*.appxupload
+*.aps
+*.azurePubxml
+*.bim_*.settings
+*.bim.layout
+*.binlog
+*.btm.cs
+*.btp.cs
+*.build.csdef
+*.cab
+*.cachefile
+*.code-workspace
+*.coverage
+*.coveragexml
+*.d
+*.dbmdl
+*.dbproj.schemaview
+*.dll
+*.dotCover
+*.DotSettings.user
+*.dsp
+*.dsw
+*.dylib
+*.e2e
+*.exe
+*.gch
+*.GhostDoc.xml
+*.gpState
+*.ilk
+*.iobj
+*.ipdb
+*.jfm
+*.jmconfig
+*.la
+*.lai
+*.ldf
+*.lib
+*.lo
+*.log
+*.mdf
+*.meta
+*.mm.*
+*.mod
+*.msi
+*.msix
+*.msm
+*.msp
+*.ncb
+*.ndf
+*.nuget.props
+*.nuget.targets
+*.nupkg
+*.nvuser
+*.o
+*.obj
+*.odx.cs
+*.opendb
+*.opensdf
+*.opt
+*.out
+*.pch
+*.pdb
+*.pfx
+*.pgc
+*.pgd
+*.pidb
+*.plg
+*.psess
+*.publishproj
+*.publishsettings
+*.pubxml
+*.pyc
+*.rdl.data
+*.rptproj.bak
+*.rptproj.rsuser
+*.rsp
+*.rsuser
+*.sap
+*.sbr
+*.scc
+*.sdf
+*.sln.docstates
+*.sln.iml
+*.slo
+*.smod
+*.snupkg
+*.so
+*.suo
+*.svclog
+*.tlb
+*.tlh
+*.tli
+*.tlog
+*.tmp
+*.tmp_proj
+*.tss
+*.user
+*.userosscache
+*.userprefs
+*.vbp
+*.vbw
+*.VC.db
+*.VC.VC.opendb
+*.VisualState.xml
+*.vsp
+*.vspscc
+*.vspx
+*.vssscc
+*.xsd.cs
+**/[Pp]ackages/*
+**/*.DesktopClient/GeneratedArtifacts
+**/*.DesktopClient/ModelManifest.xml
+**/*.HTMLClient/GeneratedArtifacts
+**/*.Server/GeneratedArtifacts
+**/*.Server/ModelManifest.xml
+*~
+~$*
+$tf/
+AppPackages/
+artifacts/
+ASALocalRun/
+AutoTest.Net/
+Backup*/
+BenchmarkDotNet.Artifacts/
+bld/
+BundleArtifacts/
+ClientBin/
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles
+CMakeLists.txt.user
+CMakeScripts
+CMakeUserPresets.json
+compile_commands.json
+coverage*.info
+coverage*.json
+coverage*.xml
+csx/
+CTestTestfile.cmake
+dlldata.c
+DocProject/buildhelp/
+DocProject/Help/*.hhc
+DocProject/Help/*.hhk
+DocProject/Help/*.hhp
+DocProject/Help/*.HxC
+DocProject/Help/*.HxT
+DocProject/Help/html
+DocProject/Help/Html2
+ecf/
+FakesAssemblies/
+FodyWeavers.xsd
+Generated_Code/
+Generated\ Files/
+healthchecksdb
+install_manifest.txt
+ipch/
+Makefile
+MigrationBackup/
+mono_crash.*
+nCrunchTemp_*
+node_modules/
+nunit-*.xml
+OpenCover/
+orleans.codegen.cs
+Package.StoreAssociation.xml
+paket-files/
+project.fragment.lock.json
+project.lock.json
+publish/
+PublishScripts/
+rcf/
+ScaffoldingReadMe.txt
+ServiceFabricBackup/
+StyleCopReport.xml
+Testing
+TestResult.xml
+UpgradeLog*.htm
+UpgradeLog*.XML
+x64/
+x86/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Distribution / packaging
+!dist/.gitkeep
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+.ruff_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+__version__.py
+_private
+VERSION.txt
+</file>
+
+<file path=".pre-commit-config.yaml">
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+        args: [--respect-gitignore]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+      - id: debug-statements
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+</file>
+
+<file path="AGENTS.md">
+# CLAIF (Command-Line Artificial Intelligence Framework)
+
+CLAIF (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
+
+The project consists of four Github repositories and Python packages:
+
+- [`claif_cla`](https://github.com/twardoch/claif_cla/): CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+- [`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+- [`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+- [`claif`](https://github.com/twardoch/claif/): The top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+This document provides comprehensive development guidelines for all packages in the CLAIF ecosystem.
+
+## 1. This very project overview
+
+### 1.1. `claif`: CLAIF core framework
+
+[`claif`](https://github.com/twardoch/claif/) is the top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+**Key Responsibilities:**
+
+- Provider abstraction and routing
+- Plugin discovery and loading
+- Common types and error handling
+- Configuration management
+- CLI framework (Fire-based)
+- MCP server implementation
+
+**Development Focus:**
+
+- Maintain strict API compatibility
+- Ensure provider independence
+- Keep dependencies minimal
+- Prioritize extensibility
+
+## 2. Other projects in the CLAIF ecosystem
+
+### 2.1. `claif_cla`: CLAIF provider for the Anthropic Claude Code CLI toolkit
+
+[`claif_cla`](https://github.com/twardoch/claif_cla/) is a CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+
+**Key Responsibilities:**
+
+- Claude API integration
+- Session management and persistence
+- Tool approval strategies
+- Response caching
+- Session branching/merging
+
+**Development Focus:**
+
+- Maintain claude-code-sdk compatibility
+- Enhance session features
+- Improve approval strategies
+- Optimize caching logic
+
+### 2.2. `claif_cod`: CLAIF provider for the OpenAI Codex CLI toolkit
+
+[`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+
+**Key Responsibilities:**
+
+- Code generation and manipulation
+- Action mode management (review/interactive/auto)
+- Working directory integration
+- Project-aware operations
+
+**Development Focus:**
+
+- Code safety and review features
+- File system operations
+- Project context awareness
+- Action mode refinement
+
+### 2.3. `claif_gem`: CLAIF provider for the Google Gemini CLI toolkit
+
+[`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+
+**Key Responsibilities:**
+
+- Gemini CLI subprocess management
+- Auto-approval and yes-mode handling
+- Context length management
+- System prompt configuration
+
+**Development Focus:**
+
+- Robust subprocess handling
+- CLI argument parsing
+- Timeout and error recovery
+- Cross-platform compatibility
+
+## 3. Working Principles for CLAIF Development
+
+### 3.1. Core Development Principles
+
+When developing for CLAIF (in any sub-project):
+
+- **Iterate gradually**, avoiding major breaking changes to the plugin interface
+- **Minimize user confirmations** while maintaining safety, especially for code operations
+- **Preserve existing API contracts** unless a major version bump is planned
+- **Use module-level constants** over magic numbers (e.g., `DEFAULT_TIMEOUT = 120`)
+- **Check for existing utilities** in `claif.common` before implementing new ones
+- **Ensure coherence** between provider implementations and the unified interface
+- **Focus on minimal viable features** and ship incremental improvements
+- **Write comprehensive docstrings** explaining both what and WHY, including cross-references
+- **Analyze provider differences** line-by-line when implementing unified features
+- **Handle provider failures gracefully** with retries, fallbacks, and clear error messages
+- **Address edge cases** like network timeouts, API limits, and malformed responses
+- **Let the framework handle complexity**, minimize provider-specific user decisions
+- **Reduce cognitive load** through consistent naming and behavior across providers
+- **Modularize provider logic** into focused, testable components
+- **Favor flat provider hierarchies** over deeply nested inheritance
+- **Maintain documentation**:
+  - README.md (purpose and usage for each sub-project)
+  - CHANGELOG.md (version history with migration notes)
+  - TODO.md (planned features and known issues)
+  - PROGRESS.md (implementation status for each provider)
+
+### 3.2. Using Development Tools
+
+Before and during development, you should:
+
+- Use `context7` tool to check latest Python package documentation
+- Consult `deepseek/deepseek-r1-0528:free` via `chat_completion` for complex architectural decisions
+- Query `openai/o3` via `chat_completion` for API design and compatibility questions
+- Apply `sequentialthinking` tool for solving cross-provider compatibility issues
+- Search with `perplexity_ask` and `duckduckgo_web_search` for provider API updates
+
+### 3.3. File Organization
+
+In each source file, maintain the `this_file` record:
+
+```python
+# this_file: src/claif_cla/cli.py
+"""CLI interface for the CLAIF Claude provider"""
+```
+
+### 3.4. Python-Specific Guidelines
+
+For all CLAIF Python code:
+
+- **PEP 8**: Consistent formatting with 120-char line limit (per pyproject.toml)
+- **Descriptive names**: `query_with_retry()` not `qwr()`
+- **PEP 20**: Explicit provider selection over magic
+- **Type hints**: Use simple unions (`str | None` not `Optional[str]`)
+- **PEP 257**: Imperative mood docstrings with provider examples
+- **Modern Python**: f-strings, pattern matching for message types
+- **Logging**: Loguru-based with provider-specific contexts
+- **CLI scripts**: Fire & rich with uv shebang:
+
+```python
+#!/usr/bin/env -S uv run -s
+# /// script
+# dependencies = ["fire", "rich", "claif"]
+# ///
+# this_file: scripts/provider_test.py
+```
+
+After changes, run:
+
+```bash
+uv run uzpy run .
+fd -e py -x autoflake {}
+fd -e py -x pyupgrade --py312-plus {}
+fd -e py -x ruff check --output-format=github --fix --unsafe-fixes {}
+fd -e py -x ruff format --respect-gitignore --target-version py312 {}
+python -m pytest
+```
+
+## 4. Sub-Project Specific Guidelines
+
+### 4.1. `claif`: CLAIF core framework
+
+**Architecture Decisions:**
+
+- Ask before adding new provider methods that all providers must implement
+- Maintain backward compatibility for plugin interface
+- Keep provider discovery lightweight and fail-safe
+
+**Testing Requirements:**
+
+- Unit tests for all provider routing logic
+- Integration tests with mock providers
+- Performance benchmarks for parallel queries
+
+**Code Organization:**
+
+```
+src/claif/
+├── __init__.py          # Public API exports
+├── common/              # Shared utilities
+│   ├── types.py        # Unified message types
+│   ├── errors.py       # Provider-agnostic errors
+│   ├── config.py       # Configuration handling
+│   └── utils.py        # Formatting, logging
+├── providers/           # Provider interfaces
+│   ├── __init__.py     # Provider registry
+│   ├── base.py         # Abstract provider
+│   └── {provider}.py   # Provider implementations
+├── client.py           # Unified client
+├── cli.py              # Main CLI interface
+└── server.py           # MCP server
+```
+
+## 5. Quality Assurance
+
+### 5.1. Pre-Commit Checks
+
+All sub-projects must pass:
+
+```yaml
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  hooks:
+    - id: ruff
+    - id: ruff-format
+- repo: https://github.com/pre-commit/mirrors-mypy
+  hooks:
+    - id: mypy
+```
+
+### 5.2. Testing Strategy
+
+1. **Unit Tests**: Provider-specific logic
+2. **Integration Tests**: Provider + CLAIF core
+3. **E2E Tests**: CLI commands with real providers
+4. **Performance Tests**: Response time, memory usage
+
+### 5.3. Documentation Requirements
+
+Each sub-project must maintain:
+
+- Comprehensive README with examples
+- API reference (autodoc where possible)
+- Migration guides for breaking changes
+- Troubleshooting section
+
+## 6. Virtual Team Collaboration
+
+When developing CLAIF:
+
+**Be creative, diligent, critical, relentless & funny!**
+
+Lead two virtual experts:
+
+- **"Ideot"**: Proposes creative provider features and unconventional integrations
+- **"Critin"**: Critiques API design and identifies compatibility issues
+
+The three of you shall:
+
+- Illuminate the best provider abstraction patterns
+- Process provider differences methodically
+- Collaborate on cross-provider features
+- Adapt when provider APIs change
+
+If compatibility issues arise, step back and focus on the unified interface goals.
+
+## 7. Release Coordination
+
+Since CLAIF uses a monorepo structure:
+
+1. Version all packages together
+2. Update inter-package dependencies
+3. Test all providers before release
+4. Publish in order: claif → providers
+5. Tag releases with `v{version}`
+
+## 8. Final Checkpoint
+
+When completing any CLAIF development:
+
+**"Wait, but..."** - Review your changes:
+
+- Does it maintain provider abstraction?
+- Is the API still unified?
+- Are errors handled consistently?
+- Is the documentation updated?
+
+Repeat this reflection, but stick to "minimal viable next version" philosophy.
+
+Remember: CLAIF's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.
+</file>
+
+<file path="GEMINI.md">
+# CLAIF (Command-Line Artificial Intelligence Framework)
+
+CLAIF (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
+
+The project consists of four Github repositories and Python packages:
+
+- [`claif_cla`](https://github.com/twardoch/claif_cla/): CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+- [`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+- [`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+- [`claif`](https://github.com/twardoch/claif/): The top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+This document provides comprehensive development guidelines for all packages in the CLAIF ecosystem.
+
+## 1. This very project overview
+
+### 1.1. `claif`: CLAIF core framework
+
+[`claif`](https://github.com/twardoch/claif/) is the top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+**Key Responsibilities:**
+
+- Provider abstraction and routing
+- Plugin discovery and loading
+- Common types and error handling
+- Configuration management
+- CLI framework (Fire-based)
+- MCP server implementation
+
+**Development Focus:**
+
+- Maintain strict API compatibility
+- Ensure provider independence
+- Keep dependencies minimal
+- Prioritize extensibility
+
+## 2. Other projects in the CLAIF ecosystem
+
+### 2.1. `claif_cla`: CLAIF provider for the Anthropic Claude Code CLI toolkit
+
+[`claif_cla`](https://github.com/twardoch/claif_cla/) is a CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+
+**Key Responsibilities:**
+
+- Claude API integration
+- Session management and persistence
+- Tool approval strategies
+- Response caching
+- Session branching/merging
+
+**Development Focus:**
+
+- Maintain claude-code-sdk compatibility
+- Enhance session features
+- Improve approval strategies
+- Optimize caching logic
+
+### 2.2. `claif_cod`: CLAIF provider for the OpenAI Codex CLI toolkit
+
+[`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+
+**Key Responsibilities:**
+
+- Code generation and manipulation
+- Action mode management (review/interactive/auto)
+- Working directory integration
+- Project-aware operations
+
+**Development Focus:**
+
+- Code safety and review features
+- File system operations
+- Project context awareness
+- Action mode refinement
+
+### 2.3. `claif_gem`: CLAIF provider for the Google Gemini CLI toolkit
+
+[`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+
+**Key Responsibilities:**
+
+- Gemini CLI subprocess management
+- Auto-approval and yes-mode handling
+- Context length management
+- System prompt configuration
+
+**Development Focus:**
+
+- Robust subprocess handling
+- CLI argument parsing
+- Timeout and error recovery
+- Cross-platform compatibility
+
+## 3. Working Principles for CLAIF Development
+
+### 3.1. Core Development Principles
+
+When developing for CLAIF (in any sub-project):
+
+- **Iterate gradually**, avoiding major breaking changes to the plugin interface
+- **Minimize user confirmations** while maintaining safety, especially for code operations
+- **Preserve existing API contracts** unless a major version bump is planned
+- **Use module-level constants** over magic numbers (e.g., `DEFAULT_TIMEOUT = 120`)
+- **Check for existing utilities** in `claif.common` before implementing new ones
+- **Ensure coherence** between provider implementations and the unified interface
+- **Focus on minimal viable features** and ship incremental improvements
+- **Write comprehensive docstrings** explaining both what and WHY, including cross-references
+- **Analyze provider differences** line-by-line when implementing unified features
+- **Handle provider failures gracefully** with retries, fallbacks, and clear error messages
+- **Address edge cases** like network timeouts, API limits, and malformed responses
+- **Let the framework handle complexity**, minimize provider-specific user decisions
+- **Reduce cognitive load** through consistent naming and behavior across providers
+- **Modularize provider logic** into focused, testable components
+- **Favor flat provider hierarchies** over deeply nested inheritance
+- **Maintain documentation**:
+  - README.md (purpose and usage for each sub-project)
+  - CHANGELOG.md (version history with migration notes)
+  - TODO.md (planned features and known issues)
+  - PROGRESS.md (implementation status for each provider)
+
+### 3.2. Using Development Tools
+
+Before and during development, you should:
+
+- Use `context7` tool to check latest Python package documentation
+- Consult `deepseek/deepseek-r1-0528:free` via `chat_completion` for complex architectural decisions
+- Query `openai/o3` via `chat_completion` for API design and compatibility questions
+- Apply `sequentialthinking` tool for solving cross-provider compatibility issues
+- Search with `perplexity_ask` and `duckduckgo_web_search` for provider API updates
+
+### 3.3. File Organization
+
+In each source file, maintain the `this_file` record:
+
+```python
+# this_file: src/claif_cla/cli.py
+"""CLI interface for the CLAIF Claude provider"""
+```
+
+### 3.4. Python-Specific Guidelines
+
+For all CLAIF Python code:
+
+- **PEP 8**: Consistent formatting with 120-char line limit (per pyproject.toml)
+- **Descriptive names**: `query_with_retry()` not `qwr()`
+- **PEP 20**: Explicit provider selection over magic
+- **Type hints**: Use simple unions (`str | None` not `Optional[str]`)
+- **PEP 257**: Imperative mood docstrings with provider examples
+- **Modern Python**: f-strings, pattern matching for message types
+- **Logging**: Loguru-based with provider-specific contexts
+- **CLI scripts**: Fire & rich with uv shebang:
+
+```python
+#!/usr/bin/env -S uv run -s
+# /// script
+# dependencies = ["fire", "rich", "claif"]
+# ///
+# this_file: scripts/provider_test.py
+```
+
+After changes, run:
+
+```bash
+uv run uzpy run .
+fd -e py -x autoflake {}
+fd -e py -x pyupgrade --py312-plus {}
+fd -e py -x ruff check --output-format=github --fix --unsafe-fixes {}
+fd -e py -x ruff format --respect-gitignore --target-version py312 {}
+python -m pytest
+```
+
+## 4. Sub-Project Specific Guidelines
+
+### 4.1. `claif`: CLAIF core framework
+
+**Architecture Decisions:**
+
+- Ask before adding new provider methods that all providers must implement
+- Maintain backward compatibility for plugin interface
+- Keep provider discovery lightweight and fail-safe
+
+**Testing Requirements:**
+
+- Unit tests for all provider routing logic
+- Integration tests with mock providers
+- Performance benchmarks for parallel queries
+
+**Code Organization:**
+
+```
+src/claif/
+├── __init__.py          # Public API exports
+├── common/              # Shared utilities
+│   ├── types.py        # Unified message types
+│   ├── errors.py       # Provider-agnostic errors
+│   ├── config.py       # Configuration handling
+│   └── utils.py        # Formatting, logging
+├── providers/           # Provider interfaces
+│   ├── __init__.py     # Provider registry
+│   ├── base.py         # Abstract provider
+│   └── {provider}.py   # Provider implementations
+├── client.py           # Unified client
+├── cli.py              # Main CLI interface
+└── server.py           # MCP server
+```
+
+## 5. Quality Assurance
+
+### 5.1. Pre-Commit Checks
+
+All sub-projects must pass:
+
+```yaml
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  hooks:
+    - id: ruff
+    - id: ruff-format
+- repo: https://github.com/pre-commit/mirrors-mypy
+  hooks:
+    - id: mypy
+```
+
+### 5.2. Testing Strategy
+
+1. **Unit Tests**: Provider-specific logic
+2. **Integration Tests**: Provider + CLAIF core
+3. **E2E Tests**: CLI commands with real providers
+4. **Performance Tests**: Response time, memory usage
+
+### 5.3. Documentation Requirements
+
+Each sub-project must maintain:
+
+- Comprehensive README with examples
+- API reference (autodoc where possible)
+- Migration guides for breaking changes
+- Troubleshooting section
+
+## 6. Virtual Team Collaboration
+
+When developing CLAIF:
+
+**Be creative, diligent, critical, relentless & funny!**
+
+Lead two virtual experts:
+
+- **"Ideot"**: Proposes creative provider features and unconventional integrations
+- **"Critin"**: Critiques API design and identifies compatibility issues
+
+The three of you shall:
+
+- Illuminate the best provider abstraction patterns
+- Process provider differences methodically
+- Collaborate on cross-provider features
+- Adapt when provider APIs change
+
+If compatibility issues arise, step back and focus on the unified interface goals.
+
+## 7. Release Coordination
+
+Since CLAIF uses a monorepo structure:
+
+1. Version all packages together
+2. Update inter-package dependencies
+3. Test all providers before release
+4. Publish in order: claif → providers
+5. Tag releases with `v{version}`
+
+## 8. Final Checkpoint
+
+When completing any CLAIF development:
+
+**"Wait, but..."** - Review your changes:
+
+- Does it maintain provider abstraction?
+- Is the API still unified?
+- Are errors handled consistently?
+- Is the documentation updated?
+
+Repeat this reflection, but stick to "minimal viable next version" philosophy.
+
+Remember: CLAIF's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2025 Adam Twardoch
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="pyproject.toml">
+# this_file: pyproject.toml
+#==============================================================================
+# CLAIF PACKAGE CONFIGURATION
+# This pyproject.toml defines the package metadata, dependencies, build system,
+# and development environment for the claif package.
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# PROJECT METADATA
+# Core package information used by PyPI and package managers.
+#------------------------------------------------------------------------------
+[project]
+name = 'claif' # Package name on PyPI
+description = 'Unified command-line interface framework for AI language models'
+readme = 'README.md' # Path to README file
+requires-python = '>=3.10' # Minimum Python version
+keywords = [
+    'ai',
+    'llm',
+    'claude',
+    'gemini',
+    'openai',
+    'cli',
+    'framework',
+    'mcp',
+    'language-models',
+] # Keywords for PyPI search
+dynamic = ["version"] # Fields set dynamically at build time
+
+# PyPI classifiers for package categorization
+classifiers = [
+    'Development Status :: 4 - Beta', # Package maturity level
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Operating System :: OS Independent',
+    'License :: OSI Approved :: MIT License',
+    'Intended Audience :: Developers',
+]
+
+dependencies = [
+    "fire>=0.6.0",
+    "rich>=13.9.4",
+    "fastmcp>=2.9.2",
+    "pydantic>=2.0.0",
+    "uvicorn>=0.32.0",
+    "importlib-metadata>=8.7.0",
+    "importlib-resources>=6.5.2",
+    "typing-extensions>=4.0.0; python_version < '3.11'",
+]
+
+# Author information
+[[project.authors]]
+name = 'Adam Twardoch'
+email = 'adam+github@twardoch.com'
+
+# License information
+[project.license]
+text = 'MIT'
+
+# Project URLs
+[project.urls]
+Documentation = 'https://github.com/twardoch/claif#readme'
+Issues = 'https://github.com/twardoch/claif/issues'
+Source = 'https://github.com/twardoch/claif'
+
+#------------------------------------------------------------------------------
+# OPTIONAL DEPENDENCIES
+# Additional dependencies for optional features, development, and testing.
+#------------------------------------------------------------------------------
+[project.optional-dependencies]
+
+# Development tools
+dev = [
+    'pre-commit>=4.1.0', # Pre-commit hook manager - Keep pre-commit as is, update if newer pre-commit version is required
+    'ruff>=0.9.7', # Linting and formatting - Keep ruff as is, update if newer ruff version is required
+    'mypy>=1.15.0', # Type checking - Keep mypy as is, update if newer mypy version is required
+    'absolufy-imports>=0.3.1', # Convert relative imports to absolute - Keep absolufy-imports as is, update if newer absolufy-imports version is required
+    'pyupgrade>=3.19.1', # Upgrade Python syntax - Keep pyupgrade as is, update if newer pyupgrade version is required
+    'isort>=6.0.1', # Sort imports - Keep isort as is, update if newer isort version is required
+]
+
+# Testing tools and frameworks
+test = [
+    'pytest>=8.3.4', # Testing framework - Keep pytest as is, update if newer pytest version is required
+    'pytest-cov>=6.0.0', # Coverage plugin for pytest - Keep pytest-cov as is, update if newer pytest-cov version is required
+    'pytest-xdist>=3.6.1', # Parallel test execution - Keep pytest-xdist as is, update if newer pytest-xdist version is required
+    'pytest-benchmark[histogram]>=5.1.0', # Benchmarking plugin - Keep pytest-benchmark as is, update if newer pytest-benchmark version is required
+    'pytest-asyncio>=0.26.0', # Async test support - Keep pytest-asyncio as is, update if newer pytest-asyncio version is required
+    'coverage[toml]>=7.6.12',
+]
+
+docs = [
+    "sphinx>=8.2.3",
+    "sphinx-rtd-theme>=3.0.2",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "myst-parser>=4.0.1", # Markdown support in Sphinx
+]
+
+# All optional dependencies combined - includes all provider packages
+all = [
+    'claif-cla>=0.1.0',  # Claude provider
+    'claif-gem>=0.1.0',  # Gemini provider
+    'claif-cod>=0.1.0',  # Codex provider
+]
+
+#------------------------------------------------------------------------------
+# COMMAND-LINE SCRIPTS
+# Entry points for command-line executables installed with the package.
+#------------------------------------------------------------------------------
+[project.scripts]
+claif = "claif.cli:main"
+claif-server = "claif.server:main"
+
+#------------------------------------------------------------------------------
+# BUILD SYSTEM CONFIGURATION
+# Defines the tools required to build the package and the build backend.
+#------------------------------------------------------------------------------
+[build-system]
+# Hatchling is a modern build backend for Python packaging
+# hatch-vcs integrates with version control systems for versioning
+requires = [
+    'hatchling>=1.27.0', # Keep hatchling as is, update if newer hatchling version is required
+    'hatch-vcs>=0.4.0', # Keep hatch-vcs as is, update if newer hatch-vcs version is required
+]
+build-backend = 'hatchling.build' # Specifies Hatchling as the build backend
+
+
+#------------------------------------------------------------------------------
+# HATCH BUILD CONFIGURATION
+# Configures the build process, specifying which packages to include and
+# how to handle versioning.
+#------------------------------------------------------------------------------
+[tool.hatch.build]
+# Include package data files
+include = [
+    "src/claif/**/*.py",
+    "src/claif/py.typed", # For better type checking support
+]
+exclude = [
+    "**/__pycache__", 
+    "**/.pytest_cache", 
+    "**/.mypy_cache",
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/*~",
+    "**/#*"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/claif"]
+reproducible = true
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "GEMINI.md",
+]
+exclude = [
+    "/.github",
+    "/.*",
+    "**/__pycache__",
+    "**/*.pyc",
+]
+
+
+# Version control system hook configuration
+# Automatically updates the version file from git tags
+[tool.hatch.build.hooks.vcs]
+version-file = "src/claif/__version__.py"
+
+# Version source configuration
+[tool.hatch.version]
+source = 'vcs' # Get version from git tags or other VCS info
+
+# Metadata handling configuration
+[tool.hatch.metadata]
+allow-direct-references = true # Allow direct references in metadata (useful for local dependencies)
+
+
+#------------------------------------------------------------------------------
+# DEVELOPMENT ENVIRONMENTS
+
+[tool.hatch.envs.default]
+features = ['dev', 'test', 'all']
+dependencies = [
+]
+
+# Commands available in the default environment
+[tool.hatch.envs.default.scripts]
+# Run tests with optional arguments
+test = 'pytest {args:tests}'
+# Run tests with coverage reporting
+test-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/claif --cov=tests {args:tests}"
+# Run type checking
+type-check = "mypy src/claif tests"
+# Run linting and formatting
+lint = ["ruff check src/claif tests", "ruff format --respect-gitignore src/claif tests"]
+# Format and fix style issues
+fmt = ["ruff format --respect-gitignore src/claif tests", "ruff check --fix src/claif tests"]
+fix = ["ruff check --fix --unsafe-fixes src/claif tests", "ruff format --respect-gitignore src/claif tests"]
+
+# Matrix configuration to test across multiple Python versions
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.10", "3.11", "3.12"]
+
+#------------------------------------------------------------------------------
+# SPECIALIZED ENVIRONMENTS
+# Additional environments for specific development tasks.
+#------------------------------------------------------------------------------
+
+# Dedicated environment for linting and code quality checks
+[tool.hatch.envs.lint]
+detached = true # Create a separate, isolated environment
+features = ['dev'] # Use dev extras  dependencies 
+
+# Linting environment commands
+[tool.hatch.envs.lint.scripts]
+# Type checking with automatic type installation
+typing = "mypy --install-types --non-interactive {args:src/claif tests}"
+# Check style and format code
+style = ["ruff check {args:.}", "ruff format --respect-gitignore {args:.}"]
+# Format and fix style issues
+fmt = ["ruff format --respect-gitignore {args:.}", "ruff check --fix {args:.}"]
+fix = ["ruff check --fix --unsafe-fixes {args:.}", "ruff format --respect-gitignore {args:.}"]
+# Run all ops
+all = ["style", "typing", "fix"]
+
+# Dedicated environment for testing
+[tool.hatch.envs.test]
+features = ['test'] # Use test extras as dependencies
+
+# Testing environment commands
+[tool.hatch.envs.test.scripts]
+# Run tests in parallel
+test = "python -m pytest -n auto {args:tests}"
+# Run tests with coverage in parallel
+test-cov = "python -m pytest -n auto --cov-report=term-missing --cov-config=pyproject.toml --cov=src/claif --cov=tests {args:tests}"
+# Run benchmarks
+bench = "python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only"
+# Run benchmarks and save results
+bench-save = "python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only --benchmark-json=benchmark/results.json"
+
+# Documentation environment
+[tool.hatch.envs.docs]
+features = ['docs']
+
+# Documentation environment commands
+[tool.hatch.envs.docs.scripts]
+build = "sphinx-build -b html docs/source docs/build"
+
+# GitHub Actions workflow configuration
+[tool.hatch.envs.ci]
+features = ['test']
+
+
+[tool.hatch.envs.ci.scripts]
+test = "pytest --cov=src/claif --cov-report=xml"
+
+
+#------------------------------------------------------------------------------
+# CODE QUALITY TOOLS
+# Configuration for linting, formatting, and code quality enforcement.
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# COVERAGE CONFIGURATION
+# Settings for test coverage measurement and reporting.
+#------------------------------------------------------------------------------
+
+# Path mapping for coverage in different environments
+[tool.coverage.paths]
+claif = ["src/claif", "*/claif/src/claif"]
+tests = ["tests", "*/claif/tests"]
+
+# Coverage report configuration
+[tool.coverage.report]
+# Lines to exclude from coverage reporting
+exclude_lines = [
+    'no cov', # Custom marker to skip coverage
+    'if __name__ == .__main__.:', # Script execution guard
+    'if TYPE_CHECKING:', # Type checking imports and code
+    'pass', # Empty pass statements
+    'raise NotImplementedError', # Unimplemented method placeholders
+    'raise ImportError', # Import error handling
+    'except ImportError', # Import error handling
+    'except KeyError', # Common error handling
+    'except AttributeError', # Common error handling
+    'except NotImplementedError', # Common error handling
+]
+
+[tool.coverage.run]
+source_pkgs = ["claif", "tests"]
+branch = true # Measure branch coverage (if/else statements)
+parallel = true # Support parallel test execution
+omit = [
+    "src/claif/__about__.py",
+]
+
+#------------------------------------------------------------------------------
+# MYPY CONFIGURATION
+# Configuration for type checking with mypy.
+#------------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+#------------------------------------------------------------------------------
+# PYTEST CONFIGURATION
+# Configuration for pytest, including markers, options, and benchmark settings.
+#------------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+addopts = "-v --durations=10 -p no:briefcase"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+console_output_style = "progress"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
+log_cli = true
+log_cli_level = "INFO"
+markers = [
+    "benchmark: marks tests as benchmarks (select with '-m benchmark')",
+    "unit: mark a test as a unit test",
+    "integration: mark a test as an integration test",
+    "permutation: tests for permutation functionality", 
+    "parameter: tests for parameter parsing",
+    "prompt: tests for prompt parsing",
+]
+norecursedirs = [
+    ".*",
+    "build",
+    "dist", 
+    "venv",
+    "__pycache__",
+    "*.egg-info",
+    "_private",
+]
+python_classes = ["Test*"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+testpaths = ["tests"]
+
+[tool.pytest-benchmark]
+min_rounds = 100
+min_time = 0.1
+histogram = true
+storage = "file"
+save-data = true
+compare = [
+    "min",    # Minimum time
+    "max",    # Maximum time
+    "mean",   # Mean time
+    "stddev", # Standard deviation
+    "median", # Median time
+    "iqr",    # Inter-quartile range
+    "ops",    # Operations per second
+    "rounds", # Number of rounds
+]
+
+#------------------------------------------------------------------------------
+# RUFF CONFIGURATION
+# Configuration for Ruff, including linter and formatter settings.
+#------------------------------------------------------------------------------ 
+
+# Ruff linter and formatter configuration
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+# Linting rules configuration
+[tool.ruff.lint]
+# Rule sets to enable, organized by category
+select = [
+    # flake8 plugins and extensions
+    'A', # flake8-builtins: checks for shadowed builtins
+    'ARG', # flake8-unused-arguments: checks for unused function arguments
+    'ASYNC', # flake8-async: checks for async/await issues
+    'B', # flake8-bugbear: finds likely bugs and design problems
+    'C', # flake8-comprehensions: helps write better list/dict comprehensions
+    'DTZ', # flake8-datetimez: checks for datetime timezone issues
+    'E', # pycodestyle errors: PEP 8 style guide errors
+    'EM', # flake8-errmsg: checks for better error messages
+    'F', # pyflakes: detects various errors
+    'FBT', # flake8-boolean-trap: checks for boolean traps in function signatures
+    'I', # isort: sorts imports
+    'ICN', # flake8-import-conventions: checks for import conventions
+    'ISC', # flake8-implicit-str-concat: checks for implicit string concatenation
+    'LOG', # flake8-logging: checks for logging issues
+    'N', # pep8-naming: checks naming conventions
+    'PLC', # pylint convention: checks for convention issues
+    'PLE', # pylint error: checks for errors
+    'PLR', # pylint refactor: suggests refactors
+    'PLW', # pylint warning: checks for suspicious code
+    'PT', # flake8-pytest-style: checks pytest-specific style
+    'PTH', # flake8-use-pathlib: checks for stdlib path usage vs pathlib
+    'PYI', # flake8-pyi: checks stub files
+    'RET', # flake8-return: checks return statement consistency
+    'RSE', # flake8-raise: checks raise statements
+    'RUF', # Ruff-specific rules
+    'S', # flake8-bandit: checks for security issues
+    'SIM', # flake8-simplify: checks for code simplification opportunities
+    'T', # flake8-print: checks for print statements
+    'TCH', # flake8-type-checking: helps with type-checking
+    'TID', # flake8-tidy-imports: checks for tidy import statements
+    'UP', # pyupgrade: checks for opportunities to use newer Python features
+    'W', # pycodestyle warnings: PEP 8 style guide warnings
+    'YTT', # flake8-2020: checks for misuse of sys.version or sys.version_info
+
+]
+# Rules to ignore (with reasons)
+ignore = [
+    'B027', # Empty method in abstract base class - sometimes needed for interfaces
+    'C901', # Function is too complex - sometimes complexity is necessary
+    'FBT003', # Boolean positional argument in function definition - sometimes unavoidable
+    'PLR0911', # Too many return statements - sometimes needed for readability
+    'PLR0912', # Too many branches - sometimes needed for complex logic
+    'PLR0913', # Too many arguments - sometimes needed in APIs
+    'PLR0915', # Too many statements - sometimes needed for comprehensive functions
+    'PLR1714', # Consider merging multiple comparisons - sometimes less readable
+    'PLW0603', # Using the global statement - sometimes necessary
+    'PT013', # Pytest explicit test parameter - sometimes clearer
+    'PTH123', # Path traversal - sometimes needed
+    'PYI056', # Calling open() in pyi file - sometimes needed in type stubs
+    'S105', # Possible hardcoded password - often false positives
+    'S106', # Possible hardcoded password - often false positives
+    'S107', # Possible hardcoded password - often false positives
+    'S110', # try-except-pass - sometimes valid for suppressing exceptions
+    'SIM102'
+    # Nested if statements - sometimes more readable than combined conditions
+]
+# Rules that should not be automatically fixed
+unfixable = [
+    'F401', # Don't automatically remove unused imports - may be needed later
+
+]
+# Configure excluded directories under the root [tool.ruff] section
+exclude = [".git", ".venv", "venv", "dist", "build", "__pycache__", "*.egg-info"]
+
+# isort configuration within Ruff
+[tool.ruff.lint.isort]
+known-first-party = ['claif'] # Treat as first-party imports for sorting
+
+# flake8-tidy-imports configuration within Ruff
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = 'all' # Ban all relative imports for consistency
+
+# Per-file rule exceptions
+[tool.ruff.lint.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+'tests/**/*' = [
+    'PLR2004', # Allow magic values in tests for readability
+    'S101', # Allow assertions in tests
+    'TID252'
+    # Allow relative imports in tests for convenience
+]
+</file>
+
+<file path=".cursorrules">
+# CLAIF (Command-Line Artificial Intelligence Framework)
+
+CLAIF (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
+
+The project consists of four Github repositories and Python packages:
+
+- [`claif_cla`](https://github.com/twardoch/claif_cla/): CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+- [`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+- [`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+- [`claif`](https://github.com/twardoch/claif/): The top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+This document provides comprehensive development guidelines for all packages in the CLAIF ecosystem.
+
+## 1. This very project overview
+
+### 1.1. `claif`: CLAIF core framework
+
+[`claif`](https://github.com/twardoch/claif/) is the top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+**Key Responsibilities:**
+
+- Provider abstraction and routing
+- Plugin discovery and loading
+- Common types and error handling
+- Configuration management
+- CLI framework (Fire-based)
+- MCP server implementation
+
+**Development Focus:**
+
+- Maintain strict API compatibility
+- Ensure provider independence
+- Keep dependencies minimal
+- Prioritize extensibility
+
+## 2. Other projects in the CLAIF ecosystem
+
+### 2.1. `claif_cla`: CLAIF provider for the Anthropic Claude Code CLI toolkit
+
+[`claif_cla`](https://github.com/twardoch/claif_cla/) is a CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+
+**Key Responsibilities:**
+
+- Claude API integration
+- Session management and persistence
+- Tool approval strategies
+- Response caching
+- Session branching/merging
+
+**Development Focus:**
+
+- Maintain claude-code-sdk compatibility
+- Enhance session features
+- Improve approval strategies
+- Optimize caching logic
+
+### 2.2. `claif_cod`: CLAIF provider for the OpenAI Codex CLI toolkit
+
+[`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+
+**Key Responsibilities:**
+
+- Code generation and manipulation
+- Action mode management (review/interactive/auto)
+- Working directory integration
+- Project-aware operations
+
+**Development Focus:**
+
+- Code safety and review features
+- File system operations
+- Project context awareness
+- Action mode refinement
+
+### 2.3. `claif_gem`: CLAIF provider for the Google Gemini CLI toolkit
+
+[`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+
+**Key Responsibilities:**
+
+- Gemini CLI subprocess management
+- Auto-approval and yes-mode handling
+- Context length management
+- System prompt configuration
+
+**Development Focus:**
+
+- Robust subprocess handling
+- CLI argument parsing
+- Timeout and error recovery
+- Cross-platform compatibility
+
+## 3. Working Principles for CLAIF Development
+
+### 3.1. Core Development Principles
+
+When developing for CLAIF (in any sub-project):
+
+- **Iterate gradually**, avoiding major breaking changes to the plugin interface
+- **Minimize user confirmations** while maintaining safety, especially for code operations
+- **Preserve existing API contracts** unless a major version bump is planned
+- **Use module-level constants** over magic numbers (e.g., `DEFAULT_TIMEOUT = 120`)
+- **Check for existing utilities** in `claif.common` before implementing new ones
+- **Ensure coherence** between provider implementations and the unified interface
+- **Focus on minimal viable features** and ship incremental improvements
+- **Write comprehensive docstrings** explaining both what and WHY, including cross-references
+- **Analyze provider differences** line-by-line when implementing unified features
+- **Handle provider failures gracefully** with retries, fallbacks, and clear error messages
+- **Address edge cases** like network timeouts, API limits, and malformed responses
+- **Let the framework handle complexity**, minimize provider-specific user decisions
+- **Reduce cognitive load** through consistent naming and behavior across providers
+- **Modularize provider logic** into focused, testable components
+- **Favor flat provider hierarchies** over deeply nested inheritance
+- **Maintain documentation**:
+  - README.md (purpose and usage for each sub-project)
+  - CHANGELOG.md (version history with migration notes)
+  - TODO.md (planned features and known issues)
+  - PROGRESS.md (implementation status for each provider)
+
+### 3.2. Using Development Tools
+
+Before and during development, you should:
+
+- Use `context7` tool to check latest Python package documentation
+- Consult `deepseek/deepseek-r1-0528:free` via `chat_completion` for complex architectural decisions
+- Query `openai/o3` via `chat_completion` for API design and compatibility questions
+- Apply `sequentialthinking` tool for solving cross-provider compatibility issues
+- Search with `perplexity_ask` and `duckduckgo_web_search` for provider API updates
+
+### 3.3. File Organization
+
+In each source file, maintain the `this_file` record:
+
+```python
+# this_file: src/claif_cla/cli.py
+"""CLI interface for the CLAIF Claude provider"""
+```
+
+### 3.4. Python-Specific Guidelines
+
+For all CLAIF Python code:
+
+- **PEP 8**: Consistent formatting with 120-char line limit (per pyproject.toml)
+- **Descriptive names**: `query_with_retry()` not `qwr()`
+- **PEP 20**: Explicit provider selection over magic
+- **Type hints**: Use simple unions (`str | None` not `Optional[str]`)
+- **PEP 257**: Imperative mood docstrings with provider examples
+- **Modern Python**: f-strings, pattern matching for message types
+- **Logging**: Loguru-based with provider-specific contexts
+- **CLI scripts**: Fire & rich with uv shebang:
+
+```python
+#!/usr/bin/env -S uv run -s
+# /// script
+# dependencies = ["fire", "rich", "claif"]
+# ///
+# this_file: scripts/provider_test.py
+```
+
+After changes, run:
+
+```bash
+uv run uzpy run .
+fd -e py -x autoflake {}
+fd -e py -x pyupgrade --py312-plus {}
+fd -e py -x ruff check --output-format=github --fix --unsafe-fixes {}
+fd -e py -x ruff format --respect-gitignore --target-version py312 {}
+python -m pytest
+```
+
+## 4. Sub-Project Specific Guidelines
+
+### 4.1. `claif`: CLAIF core framework
+
+**Architecture Decisions:**
+
+- Ask before adding new provider methods that all providers must implement
+- Maintain backward compatibility for plugin interface
+- Keep provider discovery lightweight and fail-safe
+
+**Testing Requirements:**
+
+- Unit tests for all provider routing logic
+- Integration tests with mock providers
+- Performance benchmarks for parallel queries
+
+**Code Organization:**
+
+```
+src/claif/
+├── __init__.py          # Public API exports
+├── common/              # Shared utilities
+│   ├── types.py        # Unified message types
+│   ├── errors.py       # Provider-agnostic errors
+│   ├── config.py       # Configuration handling
+│   └── utils.py        # Formatting, logging
+├── providers/           # Provider interfaces
+│   ├── __init__.py     # Provider registry
+│   ├── base.py         # Abstract provider
+│   └── {provider}.py   # Provider implementations
+├── client.py           # Unified client
+├── cli.py              # Main CLI interface
+└── server.py           # MCP server
+```
+
+## 5. Quality Assurance
+
+### 5.1. Pre-Commit Checks
+
+All sub-projects must pass:
+
+```yaml
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  hooks:
+    - id: ruff
+    - id: ruff-format
+- repo: https://github.com/pre-commit/mirrors-mypy
+  hooks:
+    - id: mypy
+```
+
+### 5.2. Testing Strategy
+
+1. **Unit Tests**: Provider-specific logic
+2. **Integration Tests**: Provider + CLAIF core
+3. **E2E Tests**: CLI commands with real providers
+4. **Performance Tests**: Response time, memory usage
+
+### 5.3. Documentation Requirements
+
+Each sub-project must maintain:
+
+- Comprehensive README with examples
+- API reference (autodoc where possible)
+- Migration guides for breaking changes
+- Troubleshooting section
+
+## 6. Virtual Team Collaboration
+
+When developing CLAIF:
+
+**Be creative, diligent, critical, relentless & funny!**
+
+Lead two virtual experts:
+
+- **"Ideot"**: Proposes creative provider features and unconventional integrations
+- **"Critin"**: Critiques API design and identifies compatibility issues
+
+The three of you shall:
+
+- Illuminate the best provider abstraction patterns
+- Process provider differences methodically
+- Collaborate on cross-provider features
+- Adapt when provider APIs change
+
+If compatibility issues arise, step back and focus on the unified interface goals.
+
+## 7. Release Coordination
+
+Since CLAIF uses a monorepo structure:
+
+1. Version all packages together
+2. Update inter-package dependencies
+3. Test all providers before release
+4. Publish in order: claif → providers
+5. Tag releases with `v{version}`
+
+## 8. Final Checkpoint
+
+When completing any CLAIF development:
+
+**"Wait, but..."** - Review your changes:
+
+- Does it maintain provider abstraction?
+- Is the API still unified?
+- Are errors handled consistently?
+- Is the documentation updated?
+
+Repeat this reflection, but stick to "minimal viable next version" philosophy.
+
+Remember: CLAIF's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.
+</file>
+
+<file path="CLAUDE.md">
+# CLAIF (Command-Line Artificial Intelligence Framework)
+
+CLAIF (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
+
+The project consists of four Github repositories and Python packages:
+
+- [`claif_cla`](https://github.com/twardoch/claif_cla/): CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+- [`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+- [`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+- [`claif`](https://github.com/twardoch/claif/): The top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+This document provides comprehensive development guidelines for all packages in the CLAIF ecosystem.
+
+## 1. This very project overview
+
+### 1.1. `claif`: CLAIF core framework
+
+[`claif`](https://github.com/twardoch/claif/) is the top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+
+**Key Responsibilities:**
+
+- Provider abstraction and routing
+- Plugin discovery and loading
+- Common types and error handling
+- Configuration management
+- CLI framework (Fire-based)
+- MCP server implementation
+
+**Development Focus:**
+
+- Maintain strict API compatibility
+- Ensure provider independence
+- Keep dependencies minimal
+- Prioritize extensibility
+
+## 2. Other projects in the CLAIF ecosystem
+
+### 2.1. `claif_cla`: CLAIF provider for the Anthropic Claude Code CLI toolkit
+
+[`claif_cla`](https://github.com/twardoch/claif_cla/) is a CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
+
+**Key Responsibilities:**
+
+- Claude API integration
+- Session management and persistence
+- Tool approval strategies
+- Response caching
+- Session branching/merging
+
+**Development Focus:**
+
+- Maintain claude-code-sdk compatibility
+- Enhance session features
+- Improve approval strategies
+- Optimize caching logic
+
+### 2.2. `claif_cod`: CLAIF provider for the OpenAI Codex CLI toolkit
+
+[`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
+
+**Key Responsibilities:**
+
+- Code generation and manipulation
+- Action mode management (review/interactive/auto)
+- Working directory integration
+- Project-aware operations
+
+**Development Focus:**
+
+- Code safety and review features
+- File system operations
+- Project context awareness
+- Action mode refinement
+
+### 2.3. `claif_gem`: CLAIF provider for the Google Gemini CLI toolkit
+
+[`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
+
+**Key Responsibilities:**
+
+- Gemini CLI subprocess management
+- Auto-approval and yes-mode handling
+- Context length management
+- System prompt configuration
+
+**Development Focus:**
+
+- Robust subprocess handling
+- CLI argument parsing
+- Timeout and error recovery
+- Cross-platform compatibility
+
+## 3. Working Principles for CLAIF Development
+
+### 3.1. Core Development Principles
+
+When developing for CLAIF (in any sub-project):
+
+- **Iterate gradually**, avoiding major breaking changes to the plugin interface
+- **Minimize user confirmations** while maintaining safety, especially for code operations
+- **Preserve existing API contracts** unless a major version bump is planned
+- **Use module-level constants** over magic numbers (e.g., `DEFAULT_TIMEOUT = 120`)
+- **Check for existing utilities** in `claif.common` before implementing new ones
+- **Ensure coherence** between provider implementations and the unified interface
+- **Focus on minimal viable features** and ship incremental improvements
+- **Write comprehensive docstrings** explaining both what and WHY, including cross-references
+- **Analyze provider differences** line-by-line when implementing unified features
+- **Handle provider failures gracefully** with retries, fallbacks, and clear error messages
+- **Address edge cases** like network timeouts, API limits, and malformed responses
+- **Let the framework handle complexity**, minimize provider-specific user decisions
+- **Reduce cognitive load** through consistent naming and behavior across providers
+- **Modularize provider logic** into focused, testable components
+- **Favor flat provider hierarchies** over deeply nested inheritance
+- **Maintain documentation**:
+  - README.md (purpose and usage for each sub-project)
+  - CHANGELOG.md (version history with migration notes)
+  - TODO.md (planned features and known issues)
+  - PROGRESS.md (implementation status for each provider)
+
+### 3.2. Using Development Tools
+
+Before and during development, you should:
+
+- Use `context7` tool to check latest Python package documentation
+- Consult `deepseek/deepseek-r1-0528:free` via `chat_completion` for complex architectural decisions
+- Query `openai/o3` via `chat_completion` for API design and compatibility questions
+- Apply `sequentialthinking` tool for solving cross-provider compatibility issues
+- Search with `perplexity_ask` and `duckduckgo_web_search` for provider API updates
+
+### 3.3. File Organization
+
+In each source file, maintain the `this_file` record:
+
+```python
+# this_file: src/claif_cla/cli.py
+"""CLI interface for the CLAIF Claude provider"""
+```
+
+### 3.4. Python-Specific Guidelines
+
+For all CLAIF Python code:
+
+- **PEP 8**: Consistent formatting with 120-char line limit (per pyproject.toml)
+- **Descriptive names**: `query_with_retry()` not `qwr()`
+- **PEP 20**: Explicit provider selection over magic
+- **Type hints**: Use simple unions (`str | None` not `Optional[str]`)
+- **PEP 257**: Imperative mood docstrings with provider examples
+- **Modern Python**: f-strings, pattern matching for message types
+- **Logging**: Loguru-based with provider-specific contexts
+- **CLI scripts**: Fire & rich with uv shebang:
+
+```python
+#!/usr/bin/env -S uv run -s
+# /// script
+# dependencies = ["fire", "rich", "claif"]
+# ///
+# this_file: scripts/provider_test.py
+```
+
+After changes, run:
+
+```bash
+uv run uzpy run .
+fd -e py -x autoflake {}
+fd -e py -x pyupgrade --py312-plus {}
+fd -e py -x ruff check --output-format=github --fix --unsafe-fixes {}
+fd -e py -x ruff format --respect-gitignore --target-version py312 {}
+python -m pytest
+```
+
+## 4. Sub-Project Specific Guidelines
+
+### 4.1. `claif`: CLAIF core framework
+
+**Architecture Decisions:**
+
+- Ask before adding new provider methods that all providers must implement
+- Maintain backward compatibility for plugin interface
+- Keep provider discovery lightweight and fail-safe
+
+**Testing Requirements:**
+
+- Unit tests for all provider routing logic
+- Integration tests with mock providers
+- Performance benchmarks for parallel queries
+
+**Code Organization:**
+
+```
+src/claif/
+├── __init__.py          # Public API exports
+├── common/              # Shared utilities
+│   ├── types.py        # Unified message types
+│   ├── errors.py       # Provider-agnostic errors
+│   ├── config.py       # Configuration handling
+│   └── utils.py        # Formatting, logging
+├── providers/           # Provider interfaces
+│   ├── __init__.py     # Provider registry
+│   ├── base.py         # Abstract provider
+│   └── {provider}.py   # Provider implementations
+├── client.py           # Unified client
+├── cli.py              # Main CLI interface
+└── server.py           # MCP server
+```
+
+## 5. Quality Assurance
+
+### 5.1. Pre-Commit Checks
+
+All sub-projects must pass:
+
+```yaml
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  hooks:
+    - id: ruff
+    - id: ruff-format
+- repo: https://github.com/pre-commit/mirrors-mypy
+  hooks:
+    - id: mypy
+```
+
+### 5.2. Testing Strategy
+
+1. **Unit Tests**: Provider-specific logic
+2. **Integration Tests**: Provider + CLAIF core
+3. **E2E Tests**: CLI commands with real providers
+4. **Performance Tests**: Response time, memory usage
+
+### 5.3. Documentation Requirements
+
+Each sub-project must maintain:
+
+- Comprehensive README with examples
+- API reference (autodoc where possible)
+- Migration guides for breaking changes
+- Troubleshooting section
+
+## 6. Virtual Team Collaboration
+
+When developing CLAIF:
+
+**Be creative, diligent, critical, relentless & funny!**
+
+Lead two virtual experts:
+
+- **"Ideot"**: Proposes creative provider features and unconventional integrations
+- **"Critin"**: Critiques API design and identifies compatibility issues
+
+The three of you shall:
+
+- Illuminate the best provider abstraction patterns
+- Process provider differences methodically
+- Collaborate on cross-provider features
+- Adapt when provider APIs change
+
+If compatibility issues arise, step back and focus on the unified interface goals.
+
+## 7. Release Coordination
+
+Since CLAIF uses a monorepo structure:
+
+1. Version all packages together
+2. Update inter-package dependencies
+3. Test all providers before release
+4. Publish in order: claif → providers
+5. Tag releases with `v{version}`
+
+## 8. Final Checkpoint
+
+When completing any CLAIF development:
+
+**"Wait, but..."** - Review your changes:
+
+- Does it maintain provider abstraction?
+- Is the API still unified?
+- Are errors handled consistently?
+- Is the documentation updated?
+
+Repeat this reflection, but stick to "minimal viable next version" philosophy.
+
+Remember: CLAIF's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.
+</file>
+
+<file path="README.md">
+# CLAIF - Command Line Artificial Intelligence Framework
+
+CLAIF is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It serves as the core framework that provides common types, error handling, configuration management, and the plugin architecture for various AI provider implementations.
+
+## What is CLAIF?
+
+CLAIF is the foundational package in the CLAIF ecosystem that:
+
+- Defines the common data structures and types used across all provider implementations
+- Provides a unified client interface for querying different AI providers
+- Implements a Fire-based CLI with rich terminal output
+- Offers an MCP (Model Context Protocol) server for integration with other tools
+- Handles configuration management, error handling, and logging
+- Enables plugin-based provider discovery and loading
+
+The actual provider implementations (Claude, Gemini, Codex) are provided by separate packages:
+- [`claif_cla`](https://github.com/twardoch/claif_cla/) - Claude provider via claude_code_sdk
+- [`claif_gem`](https://github.com/twardoch/claif_gem/) - Gemini provider via gemini-cli
+- [`claif_cod`](https://github.com/twardoch/claif_cod/) - Codex/OpenAI provider
+
+## Installation
+
+### Basic Installation
+```bash
+pip install claif
+```
+
+### With Provider Packages
+```bash
+# Install with all providers
+pip install claif[all]
+
+# Install with specific providers
+pip install claif claif_cla  # For Claude support
+pip install claif claif_gem  # For Gemini support
+pip install claif claif_cod  # For Codex support
+```
+
+### Development Installation
+```bash
+git clone https://github.com/twardoch/claif.git
+cd claif
+pip install -e ".[dev,test]"
+```
+
+## Command Line Usage
+
+CLAIF provides a comprehensive CLI built with Fire and rich for beautiful terminal output.
+
+### Basic Queries
+```bash
+# Query using default provider
+python -m claif.cli query "What is Python?"
+
+# Query specific provider
+python -m claif.cli query "Explain recursion" --provider gemini
+
+# Query with options
+python -m claif.cli query "Write a haiku" --provider claude --temperature 0.7 --max-tokens 50
+```
+
+### Streaming Responses
+```bash
+# Stream responses in real-time
+python -m claif.cli stream "Tell me a story" --provider gemini
+```
+
+### Multiple Provider Queries
+```bash
+# Query a random provider
+python -m claif.cli random "Tell me a joke"
+
+# Query all providers in parallel
+python -m claif.cli parallel "What is AI?" --compare
+```
+
+### Provider Management
+```bash
+# List available providers
+python -m claif.cli providers list
+```
+
+### Configuration
+```bash
+# Show current configuration
+python -m claif.cli config show
+
+# Set default provider
+python -m claif.cli config set default_provider gemini
+```
+
+### MCP Server
+```bash
+# Start the MCP server
+python -m claif.cli server --host localhost --port 8000
+```
+
+## Python API Usage
+
+### Basic Usage
+```python
+import asyncio
+from claif import ClaifOptions, Provider
+from claif.client import query
+
+async def main():
+    # Query default provider
+    async for message in query("Hello, world!"):
+        print(message.content)
+    
+    # Query specific provider
+    options = ClaifOptions(provider=Provider.GEMINI)
+    async for message in query("Explain Python", options):
+        print(message.content)
+
+asyncio.run(main())
+```
+
+### Advanced Options
+```python
+from claif import ClaifOptions, Provider
+
+options = ClaifOptions(
+    provider=Provider.CLAUDE,
+    model="claude-3-opus-20240229",
+    temperature=0.7,
+    max_tokens=1000,
+    system_prompt="You are a helpful assistant",
+    timeout=30,
+    cache=True,
+    verbose=True
+)
+
+async for message in query("Complex question", options):
+    print(message.content)
+```
+
+### Query Multiple Providers
+```python
+from claif.client import query_all, query_random
+
+# Query all providers
+async for results in query_all("What is machine learning?"):
+    for provider, messages in results.items():
+        print(f"\n{provider.value}:")
+        for msg in messages:
+            print(msg.content)
+
+# Query random provider
+async for message in query_random("Tell me a joke"):
+    print(message.content)
+```
+
+### Using the Client Class
+```python
+from claif.client import ClaifClient
+from claif import ClaifOptions, Provider
+
+client = ClaifClient()
+
+# List available providers
+providers = client.list_providers()
+print(providers)
+
+# Query specific provider
+options = ClaifOptions(provider=Provider.CLAUDE)
+async for message in client.query("Hello", options):
+    print(message.content)
+```
+
+### MCP Server Integration
+```python
+from claif.server import start_mcp_server
+from claif import Config
+
+config = Config()
+start_mcp_server(host="localhost", port=8000, config=config)
+```
+
+## Why CLAIF is Useful
+
+### 1. **Unified Interface**
+- Single API for multiple AI providers
+- Consistent data structures across all providers
+- Easy provider switching without code changes
+
+### 2. **Plugin Architecture**
+- Modular design with separate provider packages
+- Easy to add new providers
+- Automatic provider discovery via entry points
+
+### 3. **Rich Feature Set**
+- Comprehensive CLI with Fire
+- Beautiful terminal output with rich
+- MCP server for tool integration
+- Flexible configuration system
+- Robust error handling
+
+### 4. **Developer Experience**
+- Type hints throughout the codebase
+- Async/await support
+- Comprehensive logging
+- Well-structured error hierarchy
+
+## How It Works
+
+### Architecture
+
+```
+┌──────────────────────┐
+│    User/Application  │
+├──────────────────────┤
+│   CLAIF CLI (Fire)   │
+├──────────────────────┤
+│   CLAIF Client API   │
+├──────────────────────┤
+│  Provider Router     │
+├──────────────────────┤
+│  Common Types/Utils  │
+├────┬────┬────┬──────┤
+│claif_cla │claif_gem │claif_cod │ ... │
+└────┴────┴────┴──────┘
+```
+
+### Core Components
+
+#### 1. **Common Module** (`claif/common/`)
+- **types.py**: Core data structures
+  - `Message`: Base message class with role and content
+  - `TextBlock`, `ToolUseBlock`, `ToolResultBlock`: Content blocks
+  - `Provider`: Enum of supported providers
+  - `ClaifOptions`: Query configuration
+  - `ResponseMetrics`: Performance metrics
+- **config.py**: Configuration management
+  - Load from files, environment, and CLI args
+  - Provider-specific configurations
+  - Caching and retry settings
+- **errors.py**: Exception hierarchy
+  - `ClaifError`: Base exception
+  - `ProviderError`, `ConfigurationError`, etc.
+- **utils.py**: Utilities
+  - Logging setup
+  - Response formatting
+  - Progress indicators
+
+#### 2. **Providers Module** (`claif/providers/`)
+Simple wrapper classes that delegate to the actual provider packages:
+- **claude.py**: Imports from `claif_cla`
+- **gemini.py**: Imports from `claif_gem`
+- **codex.py**: Imports from `claif_cod`
+
+#### 3. **Client Module** (`claif/client.py`)
+- `ClaifClient`: Main client class
+  - Routes queries to providers
+  - Handles provider selection
+  - Implements parallel queries
+- Module-level convenience functions
+
+#### 4. **CLI Module** (`claif/cli.py`)
+- `ClaifCLI`: Fire-based CLI class
+  - Query commands with rich output
+  - Streaming support
+  - Provider management
+  - Configuration commands
+
+#### 5. **Server Module** (`claif/server.py`)
+- FastMCP server implementation
+- MCP tools for querying providers
+- Health checks and provider listing
+
+### Plugin System
+
+CLAIF uses Python's entry points for plugin discovery:
+
+```python
+# In src/__init__.py
+class PluginFinder:
+    """Finder for claif plugins to enable package-style imports."""
+    # Enables: from claif import claude
+```
+
+Provider packages register themselves:
+```toml
+[project.entry-points."claif.plugins"]
+claude = "claif_cla"
+```
+
+### Configuration Loading
+
+Configuration is loaded hierarchically:
+1. Default values in code
+2. Config files: `~/.claif/config.json`, `.claif/config.json`
+3. Environment variables: `CLAIF_*`
+4. Command line arguments
+
+### Message Flow
+
+1. **User Request**: CLI command or API call
+2. **Option Parsing**: ClaifOptions created with provider, model, etc.
+3. **Provider Selection**: Based on options or random/all
+4. **Query Delegation**: Client routes to provider package
+5. **Provider Execution**: Provider package handles API communication
+6. **Response Normalization**: Convert to CLAIF Message format
+7. **Streaming**: Yield messages as they arrive
+8. **Output Formatting**: Rich terminal output or structured data
+
+## Development
+
+### Project Structure
+```
+claif/
+├── src/
+│   ├── claif/
+│   │   ├── __init__.py         # Plugin system
+│   │   ├── common/             # Shared components
+│   │   ├── providers/          # Provider wrappers
+│   │   ├── client.py           # Client implementation
+│   │   ├── cli.py              # CLI interface
+│   │   └── server.py           # MCP server
+│   └── __init__.py
+├── tests/                      # Test suite
+├── pyproject.toml              # Project configuration
+└── README.md                   # This file
+```
+
+### Running Tests
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src/claif --cov-report=term-missing
+
+# Run specific test
+pytest tests/test_package.py::test_version
+```
+
+### Code Quality
+```bash
+# Format code
+ruff format src tests
+
+# Lint code
+ruff check src tests
+
+# Type checking
+mypy src/claif tests
+```
+
+### Building
+```bash
+# Build package
+python -m build
+
+# Build with hatch
+hatch build
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Links
+
+- [GitHub Repository](https://github.com/twardoch/claif)
+- [PyPI Package](https://pypi.org/project/claif/)
+- Related packages:
+  - [claif_cla](https://github.com/twardoch/claif_cla/) - Claude provider
+  - [claif_gem](https://github.com/twardoch/claif_gem/) - Gemini provider
+  - [claif_cod](https://github.com/twardoch/claif_cod/) - Codex provider
+</file>
+
+</files>
