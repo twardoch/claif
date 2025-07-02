@@ -1,111 +1,194 @@
-# Claif Development Plan
+# Claif Development Plan - v1.x Stable MVP
 
 ## Overview
 
-CLAIF (Command-Line Artificial Intelligence Framework) is a unified interface for interacting with multiple AI language model providers. The core framework and all provider packages are now production-ready and working.
+CLAIF (Command-Line Artificial Intelligence Framework) is a unified interface for interacting with multiple AI language model providers. The goal is to create a stable, solid v1.x MVP that works reliably cross-platform.
 
-## Current Status ✅ 
+## Current Status (v1.0.8)
 
-**Core Framework (v1.0.8)**: Production-ready with auto-install functionality
-**Provider Packages**: All three providers working with real CLI tools:
-- `claif_cla` (v1.0.10): Claude Code SDK integration ✅
-- `claif_gem` (v1.0.6): Google Gemini CLI integration ✅  
-- `claif_cod` (v1.0.7): OpenAI Codex CLI integration ✅
+**Core Framework**: Production-ready with auto-install functionality ✅
+**Provider Discovery**: Plugin-based system using Python entry points ✅
+**CLI Interface**: Fire-based with clean output ✅
+**MCP Server**: FastMCP integration for tools ✅
 
-**Auto-Install (Issue #201)**: ✅ COMPLETED
-- Users can run `uvx claif_* query "..."` on any machine
-- Automatic CLI tool installation when missing
-- Cross-platform support (Windows, macOS, Linux)
-- Real CLI tools: `@anthropic-ai/claude-code`, `@google/gemini-cli`, `@openai/codex`
+## MVP v1.x Improvement Plan
 
-## MVP v1.x Priorities
+### 1. Testing & Reliability (Critical)
 
-### 1. Quality & Stability (v1.0.9-1.0.11)
-- [ ] **Testing**: Add comprehensive unit tests for all packages
-- [ ] **Documentation**: Complete API documentation and usage guides
-- [ ] **Error Handling**: Improve error messages and edge case handling
-- [ ] **Cross-Platform**: Verify full Windows, macOS, Linux compatibility
+#### Unit Testing
+- [ ] Add pytest-based test suite for core framework
+  - [ ] Test provider discovery mechanism
+  - [ ] Test auto-install functionality
+  - [ ] Test CLI argument parsing
+  - [ ] Test configuration loading
+  - [ ] Test error handling paths
+- [ ] Mock external dependencies (CLI tools)
+- [ ] Test async operations and timeout handling
+- [ ] Achieve 80%+ code coverage
 
-### 2. Release & Distribution (v1.1.0)
-- [ ] **PyPI Publishing**: Release all packages to PyPI with automated workflows
-- [ ] **GitHub Actions**: Set up CI/CD pipelines for all repositories
-- [ ] **Packaging**: Verify `python -m build` and distribution works correctly
-- [ ] **Version Management**: Coordinate version bumps across all packages
+#### Integration Testing
+- [ ] Test actual provider package integration
+- [ ] Cross-platform testing (Windows, macOS, Linux)
+- [ ] Test CLI tool detection and installation
+- [ ] Test parallel provider queries
+- [ ] Test MCP server functionality
 
-### 3. User Experience Polish (v1.1.x)
-- [ ] **CLI Improvements**: Add `--version`, `--help` standardization across all packages
-- [ ] **Error Messages**: Make error messages more actionable and user-friendly
-- [ ] **Performance**: Optimize startup time and reduce overhead
-- [ ] **Configuration**: Streamline setup and configuration processes
+#### Cross-Platform Reliability
+- [ ] Verify path handling on all platforms
+- [ ] Test subprocess execution differences
+- [ ] Handle platform-specific quirks
+- [ ] Test with different Python versions (3.8+)
 
-## Architecture Status
+### 2. Error Handling & Resilience
 
-### Core Framework ✅
+#### Improved Error Messages
+- [ ] Add context to all error messages
+- [ ] Provide actionable solutions for common errors
+- [ ] Better handling of missing API keys
+- [ ] Clear messages for network failures
+- [ ] Helpful hints for installation issues
+
+#### Graceful Degradation
+- [ ] Handle provider failures without crashing
+- [ ] Retry logic for transient failures
+- [ ] Timeout handling for hanging operations
+- [ ] Fallback options when providers unavailable
+
+### 3. Documentation & Examples
+
+#### API Documentation
+- [ ] Complete docstrings for all public functions
+- [ ] Type hints with full coverage
+- [ ] Generate API docs with Sphinx/mkdocs
+- [ ] Include usage examples in docstrings
+
+#### User Documentation
+- [ ] Installation guide for all platforms
+- [ ] Configuration guide with examples
+- [ ] Troubleshooting section
+- [ ] Provider comparison table
+- [ ] Best practices guide
+
+### 4. Performance & Optimization
+
+#### Startup Performance
+- [ ] Profile import times
+- [ ] Lazy load providers
+- [ ] Optimize dependency loading
+- [ ] Cache provider discovery
+
+#### Runtime Performance
+- [ ] Minimize subprocess overhead
+- [ ] Optimize async operations
+- [ ] Reduce memory footprint
+- [ ] Profile and optimize hot paths
+
+### 5. Build & Release Process
+
+#### Package Building
+- [ ] Verify `python -m build` works correctly
+- [ ] Test wheel and sdist generation
+- [ ] Validate package metadata
+- [ ] Test installation from built packages
+
+#### CI/CD Pipeline
+- [ ] GitHub Actions for testing
+- [ ] Automated linting and formatting
+- [ ] Cross-platform test matrix
+- [ ] Release automation to PyPI
+
+### 6. Configuration & Compatibility
+
+#### Configuration System
+- [ ] Validate configuration schema
+- [ ] Add configuration migration
+- [ ] Environment variable support
+- [ ] Per-provider configuration
+
+#### Version Compatibility
+- [ ] Handle different CLI tool versions
+- [ ] Graceful handling of API changes
+- [ ] Version detection and warnings
+- [ ] Compatibility matrix documentation
+
+## Architecture Improvements
+
+### Core Framework Structure
 ```
 claif/
-├── common/         # Shared utilities, types, config ✅
-├── providers/      # Provider interfaces ✅
-├── client.py       # Unified client with auto-install ✅
-├── cli.py          # Fire-based CLI ✅
-├── server.py       # MCP server ✅
-└── install.py      # Auto-install functionality ✅
+├── __init__.py         # Clean public API
+├── common/
+│   ├── types.py       # Well-documented types
+│   ├── config.py      # Robust configuration
+│   ├── errors.py      # Comprehensive errors
+│   └── utils.py       # Tested utilities
+├── providers/
+│   ├── base.py        # Abstract provider interface
+│   ├── claude.py      # Stable Claude wrapper
+│   ├── gemini.py      # Stable Gemini wrapper
+│   └── codex.py       # Stable Codex wrapper
+├── client.py          # Tested client with retries
+├── cli.py             # User-friendly CLI
+├── server.py          # Reliable MCP server
+└── install.py         # Cross-platform installer
 ```
 
-### Provider Packages ✅
-- **claif_cla**: Production Claude integration with claude-code-sdk ✅
-- **claif_gem**: Production Gemini integration with gemini-cli ✅
-- **claif_cod**: Production Codex integration with @openai/codex ✅
+## Quality Standards
 
-## Quality Gates
+### Code Quality
+- Type hints on all functions
+- Docstrings following Google style
+- Maximum line length: 120 characters
+- Consistent naming conventions
+- No complex nested functions
 
-### Before v1.1.0 Release
-- [ ] 80%+ test coverage across all packages
-- [ ] All linting and type checking passes
-- [ ] Cross-platform testing completed
-- [ ] Documentation complete and accurate
-- [ ] PyPI package builds successfully
-- [ ] Auto-install verified on clean systems
+### Testing Standards
+- Unit tests for all modules
+- Integration tests for workflows
+- Mock external dependencies
+- Test error conditions
+- Performance benchmarks
 
-### Success Metrics
-1. **Reliability**: `uvx claif query "test"` works on any machine ✅
-2. **Completeness**: All three AI providers functional ✅
-3. **Auto-Install**: Graceful handling of missing dependencies ✅
-4. **Cross-Platform**: Works on Windows, macOS, Linux ✅
-5. **Maintainability**: Clean, well-documented codebase
+### Documentation Standards
+- README with clear examples
+- API documentation
+- Architecture documentation
+- Contributing guidelines
+- Changelog maintenance
 
-## Short-Term Roadmap (v1.1-1.2)
+## Success Criteria for v1.x
 
-| Priority | Task | Status |
-|----------|------|---------|
-| **High** | Unit test coverage 80%+ | Pending |
-| **High** | PyPI publishing automation | Pending |
-| **High** | Complete documentation | Pending |
-| **Medium** | Performance optimization | Pending |
-| **Medium** | Enhanced error handling | Pending |
-| **Low** | Response caching | Future |
+1. **Reliability**: 99% success rate for basic operations
+2. **Performance**: < 100ms overhead per operation
+3. **Compatibility**: Works on Python 3.8+ on all major platforms
+4. **Testing**: 80%+ code coverage with CI/CD
+5. **Documentation**: Complete user and API docs
+6. **Error Handling**: Clear, actionable error messages
+7. **Installation**: One-command setup that always works
 
-## Future Enhancements (v2.0+)
+## Development Priorities
 
-- Session persistence and management
-- Response caching and cost tracking
-- Advanced retry logic and rate limiting
-- Plugin system for custom providers
-- Web UI integration via MCP tools
+### Immediate (v1.0.9)
+1. Add comprehensive test suite
+2. Fix critical error handling gaps
+3. Document all public APIs
+
+### Short-term (v1.1.0)
+1. Complete cross-platform testing
+2. Set up CI/CD pipeline
+3. Publish to PyPI
+
+### Medium-term (v1.2.0)
+1. Performance optimizations
+2. Enhanced configuration system
+3. Extended documentation
 
 ## Non-Goals for v1.x
 
-- Complex web interfaces (use MCP tools instead)
-- Advanced prompt engineering features
-- Provider-specific advanced features beyond basic querying
-- Multi-user authentication systems
+- Complex UI features
 - Database backends
+- Advanced caching systems
+- Multi-user features
+- Custom provider SDKs
 
-## Design Principles Maintained
-
-1. **Simplicity First**: Clean, minimal APIs
-2. **Auto-Install**: Zero manual setup required
-3. **Provider Independence**: Unified interface across all providers
-4. **Cross-Platform**: Works everywhere Python runs
-5. **Type Safety**: Comprehensive type hints throughout
-
-The foundation is solid - now focus on quality, testing, and release preparation for a robust v1.1.0 that users can confidently adopt.
+Keep the codebase lean, focused, and reliable. Every feature must contribute to stability and cross-platform compatibility.

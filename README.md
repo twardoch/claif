@@ -1,49 +1,82 @@
 # Claif - Command Line Artificial Intelligence Framework
 
-## 1. Quickstart
-
-Claif is a unified Python framework that lets you query multiple AI providers (Claude, Gemini, OpenAI) through one simple interface. Version 1.0.6 enhances the API with more specific error types and improved module exports.
+## Quickstart
 
 ```bash
-pip install claif[all] && claif query "Explain quantum computing in one sentence"
-```
-
-Claif is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It provides a plugin-based architecture that enables seamless integration with various AI providers while maintaining a common API.
-
-## 2. What is Claif?
-
-Claif is a lightweight framework that provides:
-
-- **Unified Interface**: Single API to interact with multiple AI providers (Claude, Gemini, Codex/OpenAI)
-- **Plugin Architecture**: Dynamic provider discovery through Python entry points
-- **Fire CLI**: Command-line interface with rich terminal output
-- **MCP Server**: FastMCP server for tool integration
-- **Async Support**: Full async/await support for all operations
-- **Type Safety**: Comprehensive type hints throughout the codebase
-
-## 3. Installation
-
-### 3.1. Basic Installation
-
-```bash
-pip install claif
-```
-
-### 3.2. With Provider Packages
-
-Claif requires provider packages to be installed separately:
-
-```bash
-# Install with all providers
+# Install with all providers and query Claude
 pip install claif[all]
+claif query "Explain quantum computing in one sentence"
 
 # Or install specific providers
-pip install claif claif_cla  # For Claude support
-pip install claif claif_gem  # For Gemini support  
-pip install claif claif_cod  # For Codex/OpenAI support
+pip install claif claif_cla  # Just Claude
+pip install claif claif_gem  # Just Gemini  
+pip install claif claif_cod  # Just Codex/OpenAI
+
+# Stream responses in real-time
+claif stream "Tell me a story" --provider gemini
+
+# Query all providers in parallel
+claif parallel "What is the meaning of life?" --compare
 ```
 
-### 3.3. Development Installation
+## What is Claif?
+
+Claif is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It lets you seamlessly switch between Claude (Anthropic), Gemini (Google), and Codex (OpenAI) without changing your code.
+
+**Key Features:**
+- **Single API** for all AI providers - write once, use any model
+- **Plugin-based architecture** - providers are discovered dynamically  
+- **Rich CLI** with Fire framework and beautiful terminal output
+- **Full async support** for concurrent operations
+- **Type-safe** with comprehensive hints throughout
+- **MCP server** for tool integration
+- **Auto-install** - missing provider CLIs are installed on first use
+
+## Installation
+
+### Basic Installation
+
+```bash
+# Core framework only
+pip install claif
+
+# With all providers (recommended)
+pip install claif[all]
+```
+
+### Installing Specific Providers
+
+```bash
+# Claude provider (wraps Claude Code SDK)
+pip install claif claif_cla
+
+# Gemini provider (wraps Gemini CLI)  
+pip install claif claif_gem
+
+# Codex provider (wraps OpenAI Codex CLI)
+pip install claif claif_cod
+```
+
+### Installing Provider CLIs
+
+Claif can auto-install missing CLIs, or you can install them manually:
+
+```bash
+# Auto-install all CLIs
+claif install
+
+# Or install specific CLIs
+claif install claude
+claif install gemini
+claif install codex
+
+# Install via npm (if preferred)
+npm install -g @anthropic-ai/claude-code
+npm install -g @google/gemini-cli
+npm install -g @openai/codex
+```
+
+### Development Installation
 
 ```bash
 git clone https://github.com/twardoch/claif.git
@@ -51,168 +84,172 @@ cd claif
 pip install -e ".[dev,test]"
 ```
 
-## 4. CLI Usage
+## CLI Usage
 
-Claif provides a comprehensive command-line interface built with Fire.
+Claif provides a comprehensive command-line interface built with Fire that shows clean, focused output by default. Use `--verbose` for detailed logging.
 
-### 4.1. Basic Commands
+### Basic Commands
 
 ```bash
-# Query default provider
+# Query default provider (Claude)
 claif query "What is Python?"
 
 # Query specific provider
-claif query "Explain recursion" --provider claude
+claif query "Explain recursion" --provider gemini
 
 # Query with options
-claif query "Write a haiku" --temperature 0.7 --max-tokens 50
+claif query "Write a haiku about coding" --temperature 0.7 --max-tokens 50
 
-# Stream responses in real-time
-claif stream "Tell me a story" --provider gemini
+# Stream responses in real-time with live display
+claif stream "Tell me a story" --provider claude
 
-# Query random provider
-claif random "Tell me a joke"
+# Query a random provider
+claif random "Tell me a programming joke"
 
 # Query all providers in parallel
-claif parallel "What is AI?" --compare
+claif parallel "What is AI?" --compare  # Side-by-side comparison
 ```
 
-### 4.2. Provider Management
+### Provider Management
 
 ```bash
-# List available providers and their status
+# List providers with their status
 claif providers list
 
-# Check provider health
+# Check health of all providers
 claif providers status
+
+# Install provider CLIs
+claif install         # All providers
+claif install claude  # Specific provider
+
+# Check installation status
+claif status
 ```
 
-### 4.3. Configuration
+### Configuration
 
 ```bash
 # Show current configuration
 claif config show
 
-# Set default provider
+# Set configuration values
 claif config set default_provider=gemini
+claif config set cache_enabled=true
+claif config set output_format=markdown
 
-# Save configuration
+# Save configuration to file
 claif config save
 ```
 
-### 4.4. MCP Server
+### MCP Server
 
 ```bash
 # Start the MCP (Model Context Protocol) server
-claif server --host localhost --port 8000
+claif server --host localhost --port 8000 --reload
+
+# The server provides tools:
+# - claif_query: Query specific provider
+# - claif_query_random: Query random provider  
+# - claif_query_all: Query all providers
+# - claif_list_providers: List available providers
+# - claif_health_check: Check provider health
 ```
 
-## 5. Python API Usage
+## Python API Usage
 
-### 5.1. Basic Usage
+### Basic Usage
 
 ```python
 import asyncio
-from claif import ClaifOptions, Provider
-from claif.client import query
+from claif import query, ClaifOptions, Provider
 
 async def main():
-    # Query default provider
+    # Simple query using default provider
     async for message in query("Hello, world!"):
         print(message.content)
     
     # Query specific provider  
-    options = ClaifOptions(provider=Provider.CLAUDE)
-    async for message in query("Explain Python", options):
-        print(message.content)
+    options = ClaifOptions(provider=Provider.GEMINI)
+    async for message in query("Explain Python decorators", options):
+        print(f"[{message.role}]: {message.content}")
 
 asyncio.run(main())
 ```
 
-### 5.2. Advanced Options
+### Advanced Options
 
 ```python
-from claif import ClaifOptions, Provider
+from claif import query, ClaifOptions, Provider
 
 options = ClaifOptions(
-    provider=Provider.GEMINI,
-    model="gemini-pro",
+    provider=Provider.CLAUDE,
+    model="claude-3-opus-20240229",
     temperature=0.7,
     max_tokens=1000,
-    system_prompt="You are a helpful assistant",
-    timeout=30,
+    system_prompt="You are an expert Python developer",
+    timeout=60,
     cache=True,
-    verbose=True
+    verbose=False  # Clean output by default
 )
 
-async for message in query("Complex question", options):
-    print(message.content)
+async def get_code_review():
+    async for message in query("Review this code: def fib(n): return fib(n-1) + fib(n-2)", options):
+        print(message.content)
+
+asyncio.run(get_code_review())
 ```
 
-### 5.3. Parallel Queries
+### Parallel Queries
 
 ```python
-from claif.client import query_all, query_random
+from claif import query_all, query_random
 
 # Query all providers in parallel
-async for results in query_all("What is machine learning?"):
-    for provider, messages in results.items():
-        print(f"\n{provider.value}:")
-        for msg in messages:
-            print(msg.content)
+async def compare_providers():
+    async for results in query_all("What is machine learning?"):
+        for provider, messages in results.items():
+            print(f"\n{provider.value.upper()}:")
+            for msg in messages:
+                print(msg.content)
 
 # Query random provider
-async for message in query_random("Tell me a joke"):
-    print(message.content)
+async def get_random_response():
+    async for message in query_random("Tell me a programming joke"):
+        print(message.content)
+
+asyncio.run(compare_providers())
 ```
 
-### 5.4. Using the Client Class
+### Using the Client Class
 
 ```python
 from claif.client import ClaifClient
 from claif import ClaifOptions, Provider
 
+# Create client instance
 client = ClaifClient()
 
 # List available providers
 providers = client.list_providers()
-print(providers)  # [Provider.CLAUDE, Provider.GEMINI, Provider.CODEX]
+print(f"Available: {[p.value for p in providers]}")
 
-# Query specific provider
+# Query with auto-install
+# If Claude CLI is missing, it will be installed automatically
 options = ClaifOptions(provider=Provider.CLAUDE)
-async for message in client.query("Hello", options):
-    print(message.content)
+
+async def query_with_client():
+    async for message in client.query("Explain asyncio", options):
+        print(message.content)
+
+asyncio.run(query_with_client())
 ```
 
-## 6. Why Claif is Useful
+## How It Works
 
-### 6.1. **Provider Independence**
-- Switch between AI providers without changing your code
-- Compare responses from multiple providers easily
-- Avoid vendor lock-in
+### Architecture Overview
 
-### 6.2. **Simplified Integration**
-- Single API for all providers
-- Consistent error handling
-- Unified configuration management
-
-### 6.3. **Developer Experience**
-- Type hints for better IDE support
-- Rich CLI with beautiful output
-- **Clean console output** - commands show only AI responses (logging available with `--verbose`)
-- Comprehensive logging with loguru
-- MCP server for tool integration
-
-### 6.4. **Extensibility**
-- Plugin-based architecture
-- Easy to add new providers
-- Clean separation of concerns
-
-## 7. How It Works
-
-### 7.1. Architecture Overview
-
-Claif uses a layered architecture:
+Claif uses a layered architecture that separates concerns and enables provider independence:
 
 ```
 ┌─────────────────────────────┐
@@ -230,54 +267,75 @@ Claif uses a layered architecture:
 └─────┴─────┴─────┴──────────┘
 ```
 
-### 7.2. Core Components
+### Core Components
 
-#### 7.2.1. **Common Module** (`src/claif/common/`)
+#### Common Module (`src/claif/common/`)
 
-Provides shared functionality across all providers:
+**types.py** - Core data structures:
+```python
+class Message:
+    role: MessageRole  # USER, ASSISTANT, SYSTEM
+    content: str | list[TextBlock | ToolUseBlock | ToolResultBlock]
 
-- **types.py**: Core data structures
-  - `Message`: Base message class with role and content
-  - `Provider`: Enum of supported providers (CLAUDE, GEMINI, CODEX)
-  - `ClaifOptions`: Configuration for queries
-  - `TextBlock`, `ToolUseBlock`, `ToolResultBlock`: Content block types
-  - `ResponseMetrics`: Performance tracking
+class Provider(Enum):
+    CLAUDE = "claude"
+    GEMINI = "gemini" 
+    CODEX = "codex"
 
-- **config.py**: Configuration management
-  - Hierarchical loading: defaults → files → environment → CLI
-  - Provider-specific configurations
-  - Session and cache settings
+class ClaifOptions:
+    provider: Provider | None
+    model: str | None
+    temperature: float | None
+    max_tokens: int | None
+    system_prompt: str | None
+    timeout: int | None
+    cache: bool = True
+    verbose: bool = False
+```
 
-- **errors.py**: Exception hierarchy
-  - `ClaifError`: Base exception
-  - `ProviderError`: Provider-specific errors
-  - `ConfigurationError`: Config issues
+**config.py** - Hierarchical configuration:
+- Default values → Config files → Environment vars → CLI args
+- Locations: `~/.claif/config.json`, `~/.config/claif/config.json`, `./claif.json`
+- Provider-specific settings with API key management
 
-- **utils.py**: Utilities
-  - Response formatting (text, JSON, markdown)
-  - Progress indicators
-  - Logging configuration
+**errors.py** - Exception hierarchy:
+- `ClaifError` → Base exception
+- `ProviderError` → Provider-specific failures
+- `ConfigurationError` → Configuration issues  
+- `TransportError` → Communication errors
+- `TimeoutError` → Operation timeouts
 
-#### 7.2.2. **Providers Module** (`src/claif/providers/`)
+**install.py** - Auto-installation support:
+```python
+def install_provider(provider, package, exec_name):
+    # 1. Install npm package using bun
+    # 2. Bundle executable
+    # 3. Install to ~/.local/bin
+```
+
+#### Providers Module (`src/claif/providers/`)
 
 Simple wrapper classes that delegate to provider packages:
 
 ```python
 # claude.py
+from claif_cla import query as claude_query
+
 class ClaudeProvider:
     async def query(self, prompt: str, options: ClaifOptions) -> AsyncIterator[Message]:
+        logger.debug(f"Querying Claude with prompt: {prompt[:50]}...")
         async for message in claude_query(prompt, options):
             yield message
 ```
 
-Each provider wrapper:
+Each provider:
 - Imports the actual provider package (`claif_cla`, `claif_gem`, `claif_cod`)
 - Implements the same `query` interface
-- Logs debug information
+- Handles provider-specific option conversion
 
-#### 7.2.3. **Client Module** (`src/claif/client.py`)
+#### Client Module (`src/claif/client.py`)
 
-The main client implementation:
+The main client with auto-install support:
 
 ```python
 class ClaifClient:
@@ -287,55 +345,118 @@ class ClaifClient:
             Provider.GEMINI: GeminiProvider(),
             Provider.CODEX: CodexProvider(),
         }
+    
+    async def query(self, prompt: str, options: ClaifOptions) -> AsyncIterator[Message]:
+        try:
+            # Route to provider
+            async for message in provider.query(prompt, options):
+                yield message
+        except Exception as e:
+            if _is_cli_missing_error(e):
+                # Auto-install missing CLI
+                install_result = install_func()
+                if install_result.get("installed"):
+                    # Retry query
+                    async for message in provider.query(prompt, options):
+                        yield message
 ```
 
-Features:
+Key features:
 - Routes queries to appropriate providers
+- Auto-installs missing provider CLIs
 - Implements `query`, `query_random`, and `query_all`
-- Handles provider selection and error recovery
+- Handles errors with graceful fallbacks
 
-#### 7.2.4. **CLI Module** (`src/claif/cli.py`)
+#### CLI Module (`src/claif/cli.py`)
 
 Fire-based CLI with rich terminal output:
 
 ```python
 class ClaifCLI:
     def __init__(self, config_file=None, verbose=False):
-        # Configure loguru based on verbose flag
+        # Clean output by default
         logger.remove()
-        log_level = "DEBUG" if verbose else "INFO"
-        logger.add(sys.stderr, level=log_level)
+        if verbose:
+            logger.add(sys.stderr, level="DEBUG")
+        else:
+            # Only errors go to stderr in non-verbose mode
+            logger.add(sys.stderr, level="ERROR")
 ```
 
-Commands:
-- `query`: Basic queries with options
-- `stream`: Live streaming responses
-- `random`: Query random provider
-- `parallel`: Query all providers
-- `providers`: List and check health
-- `config`: Manage configuration
-- `server`: Start MCP server
+Main commands:
+- `query` - Execute queries with options
+- `stream` - Live streaming with rich.Live display
+- `random` - Query random provider
+- `parallel` - Query all providers (with `--compare` for side-by-side)
+- `session` - Start provider-specific interactive session
+- `install` - Install provider CLIs with bun bundling
+- `config` - Manage settings
+- `server` - Start MCP server
 
-#### 7.2.5. **Server Module** (`src/claif/server.py`)
+#### Server Module (`src/claif/server.py`)
 
-FastMCP server implementation providing tools:
-- `claif_query`: Query specific provider
-- `claif_query_random`: Query random provider
-- `claif_query_all`: Query all providers
-- `claif_list_providers`: List available providers
-- `claif_health_check`: Check provider health
+FastMCP server implementation:
 
-### 7.3. Configuration System
+```python
+server = FastMCP("Claif MCP Server")
 
-Configuration is loaded hierarchically:
+@server.tool()
+async def claif_query(prompt: str, provider: str = None) -> list[dict]:
+    """Query specific AI provider."""
+    options = ClaifOptions(provider=Provider(provider) if provider else None)
+    messages = []
+    async for message in query(prompt, options):
+        messages.append(message.to_dict())
+    return messages
+
+# Additional tools:
+# - claif_query_random: Random provider selection
+# - claif_query_all: Parallel queries
+# - claif_list_providers: Available providers
+# - claif_health_check: Provider status
+```
+
+#### Install Module (`src/claif/install.py`)
+
+Handles CLI installation and bundling:
+
+```python
+def install_claude() -> dict:
+    """Install Claude Code CLI."""
+    return install_provider(
+        provider="claude",
+        package="@anthropic-ai/claude-code", 
+        exec_name="claude"
+    )
+
+# Installation process:
+# 1. Install npm package globally using bun
+# 2. Bundle with bun compile for fast startup
+# 3. Copy to ~/.local/bin
+# 4. Handle platform-specific paths
+```
+
+Key features:
+- Uses bun for fast npm installs
+- Creates bundled executables
+- Platform-aware installation paths
+- Automatic PATH checking
+
+### Configuration System
+
+Hierarchical configuration loading:
 
 1. **Default values** in `Config` dataclass
-2. **Config files**:
+2. **Config files** (first found wins):
    - `~/.claif/config.json`
    - `~/.config/claif/config.json`
    - `./claif.json`
-3. **Environment variables**: `Claif_*`
-4. **CLI arguments**
+3. **Environment variables**: 
+   - `CLAIF_DEFAULT_PROVIDER`
+   - `CLAIF_VERBOSE`
+   - `CLAIF_CACHE_ENABLED`
+   - `CLAIF_SESSION_DIR`
+4. **CLI arguments** (highest priority)
 
 Example configuration:
 
@@ -350,24 +471,35 @@ Example configuration:
         },
         "gemini": {
             "enabled": true,
+            "model": "gemini-2.5-pro",
             "api_key_env": "GEMINI_API_KEY"
+        },
+        "codex": {
+            "enabled": true,
+            "model": "o4-mini"
         }
     },
     "cache_enabled": true,
-    "cache_ttl": 3600
+    "cache_ttl": 3600,
+    "output_format": "text"
 }
 ```
 
-### 7.4. Plugin System
+### Plugin System
 
-Claif uses Python's entry points for dynamic provider discovery:
+Python's entry points for dynamic provider discovery:
 
 ```python
 # In src/__init__.py
 class PluginFinder:
     """Enables imports like: from claif import claude"""
     def find_spec(cls, fullname, path, target=None):
-        # Looks up plugins via entry points
+        if fullname.startswith("claif."):
+            # Look up via entry points
+            eps = metadata.entry_points(group="claif.plugins")
+            for ep in eps:
+                if ep.name == plugin_name:
+                    return ModuleSpec(fullname, Loader())
 ```
 
 Provider packages register themselves:
@@ -376,44 +508,214 @@ Provider packages register themselves:
 # In provider's pyproject.toml
 [project.entry-points."claif.plugins"]
 claude = "claif_cla"
+gemini = "claif_gem" 
+codex = "claif_cod"
 ```
 
-### 7.5. Message Flow
+### Message Flow
 
-1. **User Input**: CLI command or API call
-2. **Options Parsing**: Create `ClaifOptions` with configuration
-3. **Provider Selection**: Choose provider based on options
-4. **Query Routing**: Client routes to appropriate provider wrapper
-5. **Provider Execution**: Provider package handles actual API call
-6. **Response Streaming**: Yield `Message` objects as they arrive
-7. **Output Formatting**: Display with rich or return structured data
+1. **User Input** → CLI command or API call
+2. **Options Parsing** → Create `ClaifOptions` with configuration
+3. **Provider Selection** → Choose provider based on options
+4. **Query Routing** → Client routes to appropriate provider wrapper
+5. **CLI Check** → Auto-install if CLI missing
+6. **Provider Execution** → Provider package handles actual call
+7. **Response Streaming** → Yield `Message` objects as they arrive
+8. **Output Formatting** → Display with rich or return structured data
 
-### 7.6. Logging System
+### Code Structure
 
-Claif uses loguru for simple, powerful logging:
+```
+claif/
+├── src/
+│   ├── __init__.py              # Plugin system initialization
+│   └── claif/
+│       ├── __init__.py          # Public API exports
+│       ├── common/              # Shared components
+│       │   ├── __init__.py      
+│       │   ├── types.py         # Core data structures
+│       │   ├── config.py        # Configuration management
+│       │   ├── errors.py        # Exception hierarchy
+│       │   ├── install.py       # CLI installation utilities
+│       │   └── utils.py         # Formatting and helpers
+│       ├── providers/           # Provider wrappers
+│       │   ├── __init__.py      
+│       │   ├── claude.py        # Claude wrapper
+│       │   ├── gemini.py        # Gemini wrapper
+│       │   └── codex.py         # Codex wrapper
+│       ├── client.py            # Main client implementation
+│       ├── cli.py               # Fire CLI interface
+│       ├── server.py            # FastMCP server
+│       └── install.py           # Provider CLI installation
+├── tests/                       # Test suite
+├── pyproject.toml               # Package configuration
+└── README.md                    # This file
+```
 
-- Automatic configuration based on verbose flag
-- Debug logs for provider selection and queries
-- Info logs for configuration changes
-- Warning logs for missing features
-- Structured logging with context
+### Key Implementation Details
 
-## 8. Development
+**Async Everywhere**: All I/O operations use async/await for efficiency
 
-### 8.1. Running Tests
+**Message Types**: Flexible content that can be string or structured blocks:
+```python
+class Message:
+    role: MessageRole
+    content: str | list[TextBlock | ToolUseBlock | ToolResultBlock]
+```
+
+**Provider Adapters**: Thin wrappers that maintain provider-specific features:
+```python
+# Each provider wrapper is ~20 lines
+# Imports provider package
+# Converts options if needed  
+# Yields messages unchanged
+```
+
+**Auto-Install Logic**: Missing CLIs trigger automatic installation:
+```python
+if _is_cli_missing_error(e):
+    install_func = _get_provider_install_function(provider)
+    if install_func():
+        # Retry query with fresh provider instance
+```
+
+**Clean Output**: Logging configured to minimize noise:
+```python
+# Verbose OFF: Only errors to stderr
+# Verbose ON: Full debug logging
+# AI responses always go to stdout
+```
+
+## Installation Details: Bun and Node
+
+Claif uses a hybrid approach for installing provider CLIs:
+
+### Why Bun?
+
+[Bun](https://bun.sh) is used for:
+1. **Fast npm installs** - 10x faster than npm
+2. **Binary bundling** - Creates standalone executables
+3. **Cross-platform** - Works on Windows, macOS, Linux
+4. **Minimal dependencies** - Single binary, no Node.js required
+
+### Installation Process
+
+```bash
+# 1. Bun installs the npm package globally
+bun add -g @anthropic-ai/claude-code
+
+# 2. Bundle script creates optimized binary
+bun build claude-wrapper.ts --compile --outfile dist/claude
+
+# 3. Binary is copied to ~/.local/bin
+cp dist/claude ~/.local/bin/
+```
+
+### Manual Installation Options
+
+If you prefer Node.js:
+```bash
+# Using npm
+npm install -g @anthropic-ai/claude-code
+npm install -g @google/gemini-cli  
+npm install -g @openai/codex
+
+# Using yarn
+yarn global add @anthropic-ai/claude-code
+
+# Using pnpm
+pnpm add -g @anthropic-ai/claude-code
+```
+
+### Bundle Benefits
+
+1. **Faster startup** - No Node.js initialization
+2. **Smaller size** - Single file vs node_modules
+3. **No conflicts** - Isolated from system Node.js
+4. **Portable** - Copy binary anywhere
+
+### Troubleshooting
+
+```bash
+# Check if CLIs are found
+claif status
+
+# Manually set CLI paths
+export CLAUDE_CLI_PATH=/usr/local/bin/claude
+export GEMINI_CLI_PATH=/usr/local/bin/gemini
+export CODEX_CLI_PATH=/usr/local/bin/codex
+
+# Skip auto-install and use existing CLIs
+claif config set auto_install=false
+```
+
+## Why Use Claif?
+
+### 1. **Provider Independence**
+- Write once, use any AI model
+- Switch providers with a single parameter
+- Compare responses side-by-side
+- No vendor lock-in
+
+### 2. **Zero Friction**
+- Auto-installs missing CLIs on first use
+- Clean output - only show what matters
+- Smart defaults that just work
+- Async for speed
+
+### 3. **Developer Experience**  
+- Full type hints and IDE support
+- Rich CLI with progress indicators
+- Comprehensive error messages
+- Fast MCP server for tool integration
+
+### 4. **Production Ready**
+- Battle-tested error handling
+- Timeout protection
+- Response caching (coming soon)
+- Configurable everything
+
+### 5. **Extensible**
+- Plugin architecture for new providers
+- Clean API for custom integrations  
+- Well-documented codebase
+- Active development
+
+## Contributing
+
+Based on the development guide in [CLAUDE.md](CLAUDE.md):
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/twardoch/claif.git
+cd claif
+
+# Install with dev dependencies
+pip install -e ".[dev,test]"
+
+# Install pre-commit hooks
+pre-commit install
+```
+
+### Running Tests
 
 ```bash
 # Run all tests
 pytest
 
 # Run with coverage
-pytest --cov=src/claif --cov-report=term-missing
+pytest --cov=src/claif --cov-report=html
 
 # Run specific test
-pytest -k test_version
+pytest tests/test_client.py -v
+
+# Run integration tests (requires provider packages)
+pytest tests/integration/ -v
 ```
 
-### 8.2. Code Quality
+### Code Quality
 
 ```bash
 # Format code
@@ -424,73 +726,81 @@ ruff check src tests --fix
 
 # Type checking
 mypy src/claif
+
+# Run all checks (as per CLAUDE.md)
+fd -e py -x ruff format {}
+fd -e py -x ruff check --fix --unsafe-fixes {}
+python -m pytest
 ```
 
-### 8.3. Building
+### Making Changes
+
+1. **Check existing utilities** in `claif.common` before implementing
+2. **Maintain API compatibility** - this is a plugin framework
+3. **Add tests** for new functionality
+4. **Update documentation** in docstrings and README
+5. **Follow style** - 120 char lines, descriptive names
+
+### Release Process
 
 ```bash
+# Update version (uses hatch-vcs)
+git tag v1.0.7
+
 # Build distribution
 python -m build
 
-# Install in development mode
-pip install -e ".[dev,test]"
+# Upload to PyPI
+twine upload dist/*
 ```
 
-## 9. Project Structure
-
-```
-claif/
-├── src/
-│   ├── __init__.py              # Plugin system initialization
-│   └── claif/
-│       ├── __init__.py          # Public API exports
-│       ├── common/              # Shared components
-│       │   ├── __init__.py     # Exports logger, types, utils
-│       │   ├── types.py        # Core data structures
-│       │   ├── config.py       # Configuration management
-│       │   ├── errors.py       # Exception hierarchy
-│       │   └── utils.py        # Formatting and helpers
-│       ├── providers/           # Provider wrappers
-│       │   ├── __init__.py     # Provider exports
-│       │   ├── claude.py       # Claude wrapper
-│       │   ├── gemini.py       # Gemini wrapper
-│       │   └── codex.py        # Codex wrapper
-│       ├── client.py            # Main client implementation
-│       ├── cli.py               # Fire CLI interface
-│       └── server.py            # FastMCP server
-├── tests/                       # Test suite
-├── pyproject.toml               # Package configuration
-├── LICENSE                      # MIT license
-├── README.md                    # This file
-├── CHANGELOG.md                 # Version history
-├── PLAN.md                      # Development plan
-├── TODO.md                      # Task list
-└── PROGRESS.md                  # Implementation status
-```
-
-## 10. Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and linting
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-## 11. License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 12. Related Projects
+Copyright (c) 2025 Adam Twardoch
 
-- [claif_cla](https://github.com/twardoch/claif_cla/) - Claude provider implementation
-- [claif_gem](https://github.com/twardoch/claif_gem/) - Gemini provider implementation
-- [claif_cod](https://github.com/twardoch/claif_cod/) - Codex/OpenAI provider implementation
+## Links
 
-## 13. Links
+### Claif Ecosystem
 
-- [GitHub Repository](https://github.com/twardoch/claif)
-- [PyPI Package](https://pypi.org/project/claif/)
-- [Documentation](https://github.com/twardoch/claif#readme)
-- [Issue Tracker](https://github.com/twardoch/claif/issues)
+**Core Framework:**
+- [GitHub: twardoch/claif](https://github.com/twardoch/claif) - This repository
+- [PyPI: claif](https://pypi.org/project/claif/) - Core package
+- [Documentation](https://github.com/twardoch/claif#readme) - Full docs
+- [Issues](https://github.com/twardoch/claif/issues) - Bug reports & features
+
+**Provider Packages:**
+- [claif_cla](https://github.com/twardoch/claif_cla/) - Claude provider (wraps claude-code-sdk)
+- [claif_gem](https://github.com/twardoch/claif_gem/) - Gemini provider (wraps Gemini CLI)  
+- [claif_cod](https://github.com/twardoch/claif_cod/) - Codex provider (wraps OpenAI Codex CLI)
+
+### Upstream Projects
+
+**Provider CLIs:**
+- [Claude Code](https://github.com/anthropics/claude-code) - Anthropic's official CLI
+- [claude-code-sdk](https://github.com/anthropics/claude-code-sdk-python) - Python SDK for Claude
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli/) - Google's Gemini CLI
+- [OpenAI Codex CLI](https://github.com/openai/codex) - OpenAI's code generation CLI
+
+**Related Tools:**
+- [Fire](https://github.com/google/python-fire) - Python CLI framework
+- [Rich](https://github.com/Textualize/rich) - Terminal formatting
+- [FastMCP](https://github.com/fixie-ai/fastmcp) - MCP server framework
+- [Bun](https://bun.sh) - Fast JavaScript runtime used for bundling
+
+### Resources
+
+**Documentation:**
+- [Anthropic Docs](https://docs.anthropic.com/) - Claude documentation
+- [Google AI Studio](https://ai.google.dev/) - Gemini documentation
+- [OpenAI Platform](https://platform.openai.com/) - OpenAI documentation
+
+**Community:**
+- [Discussions](https://github.com/twardoch/claif/discussions) - Q&A and ideas
+- [Twitter: @adamtwar](https://twitter.com/adamtwar) - Author updates
+
+**Articles & Tutorials:**
+- [Building a Unified AI CLI](https://example.com) - Design decisions
+- [Plugin Architecture in Python](https://example.com) - Technical deep dive
+- [Async Patterns for AI APIs](https://example.com) - Performance guide

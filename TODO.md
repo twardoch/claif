@@ -1,121 +1,125 @@
-# Claif TODO List - MVP v1.x Focus
+# claif TODO List - v1.x Stable MVP
 
-## ✅ COMPLETED - Phase 1: Core Development
+## Immediate Priority (v1.0.9)
 
-### Provider Package Implementation - ✅ COMPLETED
+### Testing & Reliability
+- [ ] Add pytest-based test suite for core framework
+- [ ] Test provider discovery mechanism
+- [ ] Test auto-install functionality
+- [ ] Test CLI argument parsing
+- [ ] Test configuration loading
+- [ ] Test error handling paths
+- [ ] Mock external dependencies (CLI tools)
+- [ ] Test async operations and timeout handling
+- [ ] Achieve 80%+ code coverage
 
+### Error Handling
+- [ ] Add context to all error messages
+- [ ] Fix critical error handling gaps
+- [ ] Document all public APIs
 
+## Short-term Priority (v1.1.0)
 
+### Integration Testing
+- [ ] Test actual provider package integration
+- [ ] Cross-platform testing (Windows, macOS, Linux)
+- [ ] Test CLI tool detection and installation
+- [ ] Test parallel provider queries
+- [ ] Test MCP server functionality
 
+### Cross-Platform Reliability
+- [ ] Verify path handling on all platforms
+- [ ] Test subprocess execution differences
+- [ ] Handle platform-specific quirks
+- [ ] Test with different Python versions (3.8+)
 
-
-### Auto-Install Functionality (Issue #201) - ✅ COMPLETED
-
-
-
-
-
-
-### Rich Dependencies Removal - ✅ COMPLETED
-
-
-
-
-### Import & Architecture Fixes - ✅ COMPLETED
-
-
-
-
-## High Priority - Phase 2: Quality & Stability
-
-### Testing Infrastructure
-- [ ] **Unit Tests**: Add comprehensive unit tests for all packages (80%+ coverage target)
-- [ ] **Integration Tests**: End-to-end testing with real CLI tools
-- [ ] **Cross-Platform Tests**: Verify Windows, macOS, Linux compatibility
-- [ ] **Mock Testing**: Create reliable mocks for subprocess calls
-- [ ] **GitHub Actions**: Set up CI/CD pipelines for all repositories
-
-### Error Handling & User Experience
-- [ ] **Better Error Messages**: Make errors actionable with clear next steps
-- [ ] **API Key Validation**: Improve missing API key error handling
-- [ ] **Timeout Handling**: Add proper timeout management for long queries
-- [ ] **Edge Cases**: Handle subprocess failures and cleanup gracefully
+### CI/CD Pipeline
+- [ ] Set up GitHub Actions for testing
+- [ ] Automated linting and formatting
+- [ ] Cross-platform test matrix
+- [ ] Release automation to PyPI
 
 ### Documentation
-- [ ] **API Documentation**: Complete documentation for all public APIs
-- [ ] **Usage Guides**: Create comprehensive getting started guides
-- [ ] **Troubleshooting**: Add common issues and solutions
-- [ ] **Examples**: Add real-world usage examples for each provider
+- [ ] Complete docstrings for all public functions
+- [ ] Type hints with full coverage
+- [ ] Installation guide for all platforms
+- [ ] Configuration guide with examples
+- [ ] Troubleshooting section
 
-## Medium Priority - Phase 3: Release Preparation
+## Medium-term Priority (v1.2.0)
 
-### Packaging & Distribution
-- [ ] **Build Verification**: Test `python -m build` for all packages
-- [ ] **PyPI Publishing**: Set up automated PyPI release workflows
-- [ ] **Version Coordination**: Sync version bumps across all packages
-- [ ] **GitHub Releases**: Create release notes and changelogs
+### Performance Optimization
+- [ ] Profile import times
+- [ ] Lazy load providers
+- [ ] Optimize dependency loading
+- [ ] Cache provider discovery
+- [ ] Minimize subprocess overhead
+- [ ] Optimize async operations
+- [ ] Reduce memory footprint
 
-### CLI Standardization
-- [ ] **Version Flags**: Add `--version` to all CLI commands
-- [ ] **Help Consistency**: Standardize `--help` output across packages
-- [ ] **Exit Codes**: Implement consistent exit code patterns
-- [ ] **Verbosity Levels**: Standardize logging levels and verbose output
+### Enhanced Configuration
+- [ ] Validate configuration schema
+- [ ] Add configuration migration
+- [ ] Environment variable support
+- [ ] Per-provider configuration
 
-### Performance & Polish
-- [ ] **Startup Time**: Optimize import time and CLI responsiveness
-- [ ] **Memory Usage**: Profile and optimize memory consumption
-- [ ] **Subprocess Efficiency**: Optimize CLI tool communication
-- [ ] **Config Caching**: Cache configuration loading where beneficial
+### Extended Documentation
+- [ ] Generate API docs with Sphinx/mkdocs
+- [ ] Provider comparison table
+- [ ] Best practices guide
+- [ ] Performance tuning guide
 
-## Low Priority - Future Enhancements (v1.2+)
+## Package Building & Release
 
-### Advanced Features
-- [ ] Response caching with configurable TTL
-- [ ] Retry logic with exponential backoff
-- [ ] Session persistence and management
-- [ ] Cost tracking and usage metrics
-- [ ] Rate limiting and quota management
+### Build Process
+- [ ] Verify `python -m build` works correctly
+- [ ] Test wheel and sdist generation
+- [ ] Validate package metadata
+- [ ] Test installation from built packages
 
-### Developer Experience
-- [ ] Plugin system for custom providers
-- [ ] Enhanced debugging and profiling tools
-- [ ] Performance benchmarking suite
-- [ ] Advanced configuration options
+### Version Management
+- [ ] Handle different CLI tool versions
+- [ ] Graceful handling of API changes
+- [ ] Version detection and warnings
+- [ ] Compatibility matrix documentation
+
+## Quality Standards Checklist
+
+### Code Quality
+- [ ] Type hints on all functions
+- [ ] Docstrings following Google style
+- [ ] Maximum line length: 120 characters
+- [ ] Consistent naming conventions
+- [ ] No complex nested functions
+
+### Testing Standards
+- [ ] Unit tests for all modules
+- [ ] Integration tests for workflows
+- [ ] Mock external dependencies
+- [ ] Test error conditions
+- [ ] Performance benchmarks
+
+### Documentation Standards
+- [ ] README with clear examples
+- [ ] API documentation
+- [ ] Architecture documentation
+- [ ] Contributing guidelines
+- [ ] Changelog maintenance
+
+## Success Metrics
+
+- [ ] **Reliability**: 99% success rate for basic operations
+- [ ] **Performance**: < 100ms overhead per operation
+- [ ] **Compatibility**: Works on Python 3.8+ on all major platforms
+- [ ] **Testing**: 80%+ code coverage with CI/CD
+- [ ] **Documentation**: Complete user and API docs
+- [ ] **Error Handling**: Clear, actionable error messages
+- [ ] **Installation**: One-command setup that always works
 
 ## Non-Goals for v1.x
 
-These items are intentionally excluded from MVP plans:
-- Web UI development (use existing MCP tools)
-- Complex prompt engineering features
-- Provider-specific advanced features beyond basic querying
-- Database backends for persistence
-- Multi-user authentication systems
-- Advanced session management features
-
-## Definition of Done for v1.1.0
-
-### Quality Gates
-- [ ] 80%+ unit test coverage across all packages
-- [ ] All linting (ruff) and type checking (mypy) passes
-- [ ] Cross-platform testing completed and documented
-- [ ] All packages build successfully with `python -m build`
-- [ ] Auto-install functionality verified on clean systems
-- [ ] Documentation complete and accurate
-
-### Success Criteria
-1. **Reliability**: `uvx claif query "test"` works immediately on any machine ✅
-2. **Completeness**: All three AI providers (Claude, Gemini, Codex) functional ✅
-3. **Auto-Install**: Graceful handling of missing CLI dependencies ✅
-4. **Cross-Platform**: Verified working on Windows, macOS, Linux ✅
-5. **Maintainability**: Clean, well-tested, documented codebase
-
-## Current Focus
-
-**Immediate Next Steps:**
-1. Add comprehensive unit tests to all packages
-2. Set up GitHub Actions CI/CD workflows
-3. Complete API documentation
-4. Verify cross-platform compatibility
-5. Prepare for PyPI publishing
-
-The foundation is solid and working - now we focus on quality, testing, and professional release preparation.
+- Complex UI features
+- Database backends
+- Advanced caching systems
+- Multi-user features
+- Custom provider SDKs
