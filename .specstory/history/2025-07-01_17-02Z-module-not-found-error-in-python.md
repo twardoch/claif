@@ -8,7 +8,7 @@ Traceback (most recent call last):
   File "/Library/Frameworks/Python.framework/Versions/3.12/bin/claif", line 4, in <module>
     from claif.cli import main
   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/claif/__init__.py", line 3, in <module>
-    from src.claif.common import (
+    from claif.common import (
 ModuleNotFoundError: No module named 'src'
 
 ---
@@ -17,12 +17,12 @@ _**Assistant**_
 
 <think><details><summary>Thought Process</summary>**Debugging Python Imports**
 
-I've been wrestling with this pesky `ModuleNotFoundError`. It seems I'm having trouble resolving imports within my package structure. The error pops up in `claif/__init__.py` when trying to import from `src.claif.common`. I'm starting to think a relative import might be the key to fixing this and untangling the import labyrinth. It looks like `from .` is the way to go!
+I've been wrestling with this pesky `ModuleNotFoundError`. It seems I'm having trouble resolving imports within my package structure. The error pops up in `claif/__init__.py` when trying to import from `claif.common`. I'm starting to think a relative import might be the key to fixing this and untangling the import labyrinth. It looks like `from .` is the way to go!
 
 
 **Revising Import Strategies**
 
-The `ModuleNotFoundError` keeps bugging me, specifically when importing from `src.claif.common` in the installed package.  Aha! I now believe I've identified the root cause of this nuisance;  `src` is not part of the deployed package structure. It should be `from .common import ...` or `from claif.common import ...` instead. Time to check the deployed package.
+The `ModuleNotFoundError` keeps bugging me, specifically when importing from `claif.common` in the installed package.  Aha! I now believe I've identified the root cause of this nuisance;  `src` is not part of the deployed package structure. It should be `from .common import ...` or `from claif.common import ...` instead. Time to check the deployed package.
 
 
 **Pinpointing the Import Issue**
@@ -51,14 +51,14 @@ I've examined the `__init__.py` file and pinpointed the erroneous import stateme
 
 **Refactoring Import Statements**
 
-I've now addressed the `ModuleNotFoundError` by correcting the import paths in `__init__.py`.  Initially, the code erroneously referenced the non-existent `src` directory. I've switched to relative imports, ensuring the package's internal structure is correctly represented. This involved changing all instances of `from src.claif...` to `from ....` within the  `src/claif/__init__.py` file. I'm confident this fixes the issue.
+I've now addressed the `ModuleNotFoundError` by correcting the import paths in `__init__.py`.  Initially, the code erroneously referenced the non-existent `src` directory. I've switched to relative imports, ensuring the package's internal structure is correctly represented. This involved changing all instances of `from claif...` to `from ....` within the  `src/claif/__init__.py` file. I'm confident this fixes the issue.
 
 
 </details></think>
 
 ---
 
-Okay, I see the problem in `src/claif/__init__.py`. The `from src.claif.common import ...` line is causing the `ModuleNotFoundError` because the `src` directory isn't part of the package when it's installed.
+Okay, I see the problem in `src/claif/__init__.py`. The `from claif.common import ...` line is causing the `ModuleNotFoundError` because the `src` directory isn't part of the package when it's installed.
 
 I'll fix this by changing the import to be relative to the current package.
 
@@ -67,7 +67,7 @@ I'll fix this by changing the import to be relative to the current package.
 ```diff
   """Claif - Command Line Artificial Intelligence Framework."""
   
-- from src.claif.common import (
+- from claif.common import (
 + from .common import (
       ClaifError,
       ClaifOptions,
@@ -77,17 +77,17 @@ I'll fix this by changing the import to be relative to the current package.
 
 <think><details><summary>Thought Process</summary>**Analyzing Linter Issues**
 
-I've successfully applied the edit, but a stubborn linter is now throwing errors. It seems I'm missing 'ClaifOptions' and 'ClaifResponse' from 'src.claif.common', which is a major roadblock. I need to figure out why these imports aren't resolving correctly.
+I've successfully applied the edit, but a stubborn linter is now throwing errors. It seems I'm missing 'ClaifOptions' and 'ClaifResponse' from 'claif.common', which is a major roadblock. I need to figure out why these imports aren't resolving correctly.
 
 
 **Diagnosing Import Errors**
 
-My edit resolved the `ModuleNotFoundError`, but now the linter is raising import errors for 'ClaifOptions', 'ClaifResponse', and 'ResponseMetrics' from 'src.claif.common'.  This looks like a linter configuration issue with relative imports. The linter, working from the root, seems unable to find these symbols in the intended package. I suspect there are other instances of this 'src.' prefix confusion needing a fix.  I plan to search for and correct any similar import statements.
+My edit resolved the `ModuleNotFoundError`, but now the linter is raising import errors for 'ClaifOptions', 'ClaifResponse', and 'ResponseMetrics' from 'claif.common'.  This looks like a linter configuration issue with relative imports. The linter, working from the root, seems unable to find these symbols in the intended package. I suspect there are other instances of this 'src.' prefix confusion needing a fix.  I plan to search for and correct any similar import statements.
 
 
 **Identifying Lingering Linter Issues**
 
-I've fixed the `ModuleNotFoundError`, but now I'm confronting persistent linter errors. It's indicating unresolved imports: 'ClaifOptions', 'ClaifResponse', and 'ResponseMetrics' from 'src.claif.common'. The linter seems to be misunderstanding relative imports, particularly with the 'src.' prefix. I think it is running from the root and can't find those classes. My immediate next step is to examine the entire project for similar import statements that may need correction. I'll search for 'from src.claif' within the 'src' directory to uncover and rectify these issues.
+I've fixed the `ModuleNotFoundError`, but now I'm confronting persistent linter errors. It's indicating unresolved imports: 'ClaifOptions', 'ClaifResponse', and 'ResponseMetrics' from 'claif.common'. The linter seems to be misunderstanding relative imports, particularly with the 'src.' prefix. I think it is running from the root and can't find those classes. My immediate next step is to examine the entire project for similar import statements that may need correction. I'll search for 'from claif' within the 'src' directory to uncover and rectify these issues.
 
 
 </details></think>
@@ -96,49 +96,49 @@ I've fixed the `ModuleNotFoundError`, but now I'm confronting persistent linter 
 
 The edit was successful, but it triggered some linter errors. I believe these are due to the linter's configuration and not an actual issue with the code; the traceback clearly indicated the problem was the `src.` prefix.
 
-I'll now search for other instances of `from src.claif...` within the `src` directory to correct them as well.
+I'll now search for other instances of `from claif...` within the `src` directory to correct them as well.
 
 ---
 
 <details>
-            <summary>Grep search for "from src.claif" • **8** files</summary>
+            <summary>Grep search for "from claif" • **8** files</summary>
         
 | File | Line | Match |
 |------|------|-------|
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L530 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L531 | `- from src.claif_cla import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L532 | `+ from src.claif_cla.cli import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L550 | `I've hit a snag with the import statement: `from src.claif_cla import query`. The linter flagged an error because `src` might be the wrong starting point for the import path. My current thinking is that `claif_cla` is a distinct package, thus `` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L578 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L579 | `- from src.claif_cla.cli import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L580 | `+ from src.claif_cla import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2385 | `from src.claif.common.errors import ConfigurationError` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2386 | `from src.claif.common.types import Provider` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2699 | `from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2829 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2830 | `from src.claif_cla import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2856 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2857 | `from src.claif_cod import query as codex_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2883 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2884 | `from src.claif_gem import query as gemini_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2908 | `from src.claif.common import (` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/gemini.py` | L4 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/gemini.py` | L5 | `from src.claif_gem import query as gemini_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/common/utils.py` | L11 | `from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/common/config.py` | L9 | `from src.claif.common.errors import ConfigurationError` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/common/config.py` | L10 | `from src.claif.common.types import Provider` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/codex.py` | L4 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/codex.py` | L5 | `from src.claif_cod import query as codex_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/claude.py` | L4 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/claude.py` | L5 | `from src.claif_cla import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L439 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L440 | `- from src.claif_cla import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L441 | `+ from src.claif_cla.cli import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L459 | `I've hit a snag with the import statement: `from src.claif_cla import query`. The linter flagged an error because `src` might be the wrong starting point for the import path. My current thinking is that `claif_cla` is a distinct package, thus `` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L487 | `from src.claif.common import ClaifOptions, Message, logger` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L488 | `- from src.claif_cla.cli import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L489 | `+ from src.claif_cla import query as claude_query` |
-| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_17-02Z-untitled.md` | L10 | `from src.claif.common import (` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L530 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L531 | `- from claif_cla import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L532 | `+ from claif_cla.cli import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L550 | `I've hit a snag with the import statement: `from claif_cla import query`. The linter flagged an error because `src` might be the wrong starting point for the import path. My current thinking is that `claif_cla` is a distinct package, thus `` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L578 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L579 | `- from claif_cla.cli import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L580 | `+ from claif_cla import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2385 | `from claif.common.errors import ConfigurationError` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2386 | `from claif.common.types import Provider` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2699 | `from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2829 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2830 | `from claif_cla import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2856 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2857 | `from claif_cod import query as codex_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2883 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2884 | `from claif_gem import query as gemini_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/llms.txt` | L2908 | `from claif.common import (` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/gemini.py` | L4 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/gemini.py` | L5 | `from claif_gem import query as gemini_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/common/utils.py` | L11 | `from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/common/config.py` | L9 | `from claif.common.errors import ConfigurationError` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/common/config.py` | L10 | `from claif.common.types import Provider` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/codex.py` | L4 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/codex.py` | L5 | `from claif_cod import query as codex_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/claude.py` | L4 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/src/claif/providers/claude.py` | L5 | `from claif_cla import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L439 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L440 | `- from claif_cla import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L441 | `+ from claif_cla.cli import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L459 | `I've hit a snag with the import statement: `from claif_cla import query`. The linter flagged an error because `src` might be the wrong starting point for the import path. My current thinking is that `claif_cla` is a distinct package, thus `` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L487 | `from claif.common import ClaifOptions, Message, logger` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L488 | `- from claif_cla.cli import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_16-28Z-update-logging-code-to-use-loguru.md` | L489 | `+ from claif_cla import query as claude_query` |
+| `file:///Users/adam/Developer/vcs/github.twardoch/pub/claif-packages/claif/.specstory/history/2025-07-01_17-02Z-untitled.md` | L10 | `from claif.common import (` |
 
 </details>
 
@@ -151,21 +151,21 @@ My focus has shifted to identifying and fixing the problematic import statements
 
 **Reviewing Import Paths**
 
-I'm now revising the import paths in `gemini.py`. The initial fix I considered for `claif_gem` was incorrect.  The issue stemmed from an incorrect path to common components, now resolved by changing `from src.claif.common ...` to `from ..common ...`. I'm verifying the same for the rest of the problematic imports. I will now examine `utils.py` and `config.py` to ensure consistency.
+I'm now revising the import paths in `gemini.py`. The initial fix I considered for `claif_gem` was incorrect.  The issue stemmed from an incorrect path to common components, now resolved by changing `from claif.common ...` to `from ..common ...`. I'm verifying the same for the rest of the problematic imports. I will now examine `utils.py` and `config.py` to ensure consistency.
 
 
 **Adjusting Import Statements**
 
-I'm now zeroing in on the problematic imports in `gemini.py`, `utils.py`, and `config.py`, as identified by `grep`. My focus is to replace erroneous `src.` prefixes, and to ensure correct relative import paths. The previous fix for `gemini.py`, I realized, requires further refinement.  `claif_gem` is a separate package, not a sub-directory, so `from src.claif_gem import query` is definitely incorrect. I'm carefully reviewing the imports to make sure they're accurate before testing.
+I'm now zeroing in on the problematic imports in `gemini.py`, `utils.py`, and `config.py`, as identified by `grep`. My focus is to replace erroneous `src.` prefixes, and to ensure correct relative import paths. The previous fix for `gemini.py`, I realized, requires further refinement.  `claif_gem` is a separate package, not a sub-directory, so `from claif_gem import query` is definitely incorrect. I'm carefully reviewing the imports to make sure they're accurate before testing.
 
 
 </details></think>
 
 ---
 
-I've found several files with the problematic `from src.claif...` import. I'll address them individually.
+I've found several files with the problematic `from claif...` import. I'll address them individually.
 
-First, I'll examine `src/claif/providers/gemini.py`. The `claif_gem` import is for a separate package, so the `src.` prefix is incorrect. The `src.claif.common` import should be a relative import, `..common`, since it's a sibling directory. I'll read the file to confirm before making changes.
+First, I'll examine `src/claif/providers/gemini.py`. The `claif_gem` import is for a separate package, so the `src.` prefix is incorrect. The `claif.common` import should be a relative import, `..common`, since it's a sibling directory. I'll read the file to confirm before making changes.
 
 ---
 
@@ -175,7 +175,7 @@ Read file: src/claif/providers/gemini.py
 
 <think><details><summary>Thought Process</summary>**Reviewing the imports**
 
-I've examined the imports from `src/claif/providers/gemini.py`. They look standard, including `ClaifOptions`, `Message`, and `logger` from `src.claif.common`, and `gemini_query` from `src.claif_gem`. I'm now considering how to modify this module.
+I've examined the imports from `src/claif/providers/gemini.py`. They look standard, including `ClaifOptions`, `Message`, and `logger` from `claif.common`, and `gemini_query` from `claif_gem`. I'm now considering how to modify this module.
 
 
 **Adjusting the Imports**
@@ -187,15 +187,15 @@ I've successfully modified the imports in `src/claif/providers/gemini.py`. The a
 
 ---
 
-I've got `src/claif/providers/gemini.py`. The imports are wrong. I'll change `from src.claif.common...` to `from ..common...` for a correct relative path, and I'll drop the `src.` prefix from the `claif_gem` import since it's an external dependency. I'll apply this now.
+I've got `src/claif/providers/gemini.py`. The imports are wrong. I'll change `from claif.common...` to `from ..common...` for a correct relative path, and I'll drop the `src.` prefix from the `claif_gem` import since it's an external dependency. I'll apply this now.
 
 ---
 
 ```diff
   from collections.abc import AsyncIterator
   
-- from src.claif.common import ClaifOptions, Message, logger
-- from src.claif_gem import query as gemini_query
+- from claif.common import ClaifOptions, Message, logger
+- from claif_gem import query as gemini_query
 + from ..common import ClaifOptions, Message, logger
 + from claif_gem import query as gemini_query
   
@@ -238,12 +238,12 @@ Read file: src/claif/common/utils.py
 
 <think><details><summary>Thought Process</summary>**Addressing the Import Path**
 
-I've examined the import statement in `utils.py` and realized it's pointing to the wrong location. My initial assumption about the import path, specifically `from src.claif.common.types import ...`, is incorrect. The actual file structure necessitates a relative import since `types.py` resides in the same directory as `utils.py`. The update will fix this.
+I've examined the import statement in `utils.py` and realized it's pointing to the wrong location. My initial assumption about the import path, specifically `from claif.common.types import ...`, is incorrect. The actual file structure necessitates a relative import since `types.py` resides in the same directory as `utils.py`. The update will fix this.
 
 
 **Modifying the Import**
 
-I've corrected the import path in `utils.py`. The original import, `from src.claif.common.types import ...`, was indeed flawed. After reviewing the file structure, I've adjusted it to a relative import, `from .types import ...`, which aligns with the location of `types.py` within the same directory. This correction ensures the code functions as expected.
+I've corrected the import path in `utils.py`. The original import, `from claif.common.types import ...`, was indeed flawed. After reviewing the file structure, I've adjusted it to a relative import, `from .types import ...`, which aligns with the location of `types.py` within the same directory. This correction ensures the code functions as expected.
 
 
 </details></think>
@@ -257,7 +257,7 @@ Got `utils.py` content. Import's wrong. It's in the same directory as `types.py`
 ```diff
   from rich.table import Table
   
-- from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
+- from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
 + from .types import ContentBlock, Message, ResponseMetrics, TextBlock
   
   
@@ -289,12 +289,12 @@ Read file: src/claif/common/config.py
 
 <think><details><summary>Thought Process</summary>**Reviewing Relative Imports**
 
-I'm analyzing the file `src/claif/common/config.py`. It's clear that the imports `from src.claif.common.errors import ConfigurationError` and `from src.claif.common.types import Provider` are relative. This confirms my initial assessment.
+I'm analyzing the file `src/claif/common/config.py`. It's clear that the imports `from claif.common.errors import ConfigurationError` and `from claif.common.types import Provider` are relative. This confirms my initial assessment.
 
 
 **Applying Relative Imports**
 
-I've successfully transformed the absolute imports within `src/claif/common/config.py` into relative imports. Specifically, I replaced `from src.claif.common.errors import ConfigurationError` and `from src.claif.common.types import Provider` with `from .errors import ConfigurationError` and `from .types import Provider`, respectively, aligning with best practices for directory structure.
+I've successfully transformed the absolute imports within `src/claif/common/config.py` into relative imports. Specifically, I replaced `from claif.common.errors import ConfigurationError` and `from claif.common.types import Provider` with `from .errors import ConfigurationError` and `from .types import Provider`, respectively, aligning with best practices for directory structure.
 
 
 </details></think>
@@ -308,8 +308,8 @@ Okay, `config.py` imports are wrong. I'm in the `common` directory, so I'll make
 ```diff
   from typing import Any, Dict, Optional
   
-- from src.claif.common.errors import ConfigurationError
-- from src.claif.common.types import Provider
+- from claif.common.errors import ConfigurationError
+- from claif.common.types import Provider
 + from .errors import ConfigurationError
 + from .types import Provider
   
@@ -342,7 +342,7 @@ Read file: src/claif/providers/codex.py
 
 <think><details><summary>Thought Process</summary>**Considering Code Structure**
 
-I've examined `src/claif/providers/codex.py`, noting its imports from `src.claif.common` and `src.claif_cod`. The architecture resembles the Gemini integration. My current focus is on understanding the specific interactions with `codex_query` and how it handles the input messages and options.
+I've examined `src/claif/providers/codex.py`, noting its imports from `claif.common` and `claif_cod`. The architecture resembles the Gemini integration. My current focus is on understanding the specific interactions with `codex_query` and how it handles the input messages and options.
 
 
 **Refining the Imports**
@@ -354,15 +354,15 @@ I've just pinpointed the import corrections needed in `src/claif/providers/codex
 
 ---
 
-Okay, I'm in `src/claif/providers/codex.py`. The imports are wrong. I'll change `from src.claif.common...` to a relative `from ..common...` and fix the external `claif_cod` import. Applying the change now.
+Okay, I'm in `src/claif/providers/codex.py`. The imports are wrong. I'll change `from claif.common...` to a relative `from ..common...` and fix the external `claif_cod` import. Applying the change now.
 
 ---
 
 ```diff
   from collections.abc import AsyncIterator
   
-- from src.claif.common import ClaifOptions, Message, logger
-- from src.claif_cod import query as codex_query
+- from claif.common import ClaifOptions, Message, logger
+- from claif_cod import query as codex_query
 + from ..common import ClaifOptions, Message, logger
 + from claif_cod import query as codex_query
   
@@ -395,7 +395,7 @@ Read file: src/claif/providers/claude.py
 
 <think><details><summary>Thought Process</summary>**Analyzing the Claude Provider**
 
-I'm currently focused on the `src/claif/providers/claude.py` file. It's the final piece I need to integrate, and I'm examining its structure and dependencies. I've noted the necessary imports from `src.claif.common` for essential functionalities and also the `query` function from `src.claif_cla`, which will be crucial for interactions with the Claude model. The next step is to ensure proper integration and smooth operation within the system.
+I'm currently focused on the `src/claif/providers/claude.py` file. It's the final piece I need to integrate, and I'm examining its structure and dependencies. I've noted the necessary imports from `claif.common` for essential functionalities and also the `query` function from `claif_cla`, which will be crucial for interactions with the Claude model. The next step is to ensure proper integration and smooth operation within the system.
 
 
 **Fixing Imports for Claude**
@@ -414,8 +414,8 @@ Okay, I'm fixing `claude.py`. It's the last one. The imports are wrong, just lik
 ```diff
   from collections.abc import AsyncIterator
   
-- from src.claif.common import ClaifOptions, Message, logger
-- from src.claif_cla import query as claude_query
+- from claif.common import ClaifOptions, Message, logger
+- from claif_cla import query as claude_query
 + from ..common import ClaifOptions, Message, logger
 + from claif_cla import query as claude_query
   
@@ -426,7 +426,7 @@ Okay, I'm fixing `claude.py`. It's the last one. The imports are wrong, just lik
 
 <think><details><summary>Thought Process</summary>**Rectifying Import Errors**
 
-I've successfully addressed the Python import issues, specifically the `from src.claif...` problem. The `ModuleNotFoundError` is now resolved, and the code should run without initial import failures. However, the linter is still flagging some type hinting issues, like the `ClaifOptions` class, and its related configuration.
+I've successfully addressed the Python import issues, specifically the `from claif...` problem. The `ModuleNotFoundError` is now resolved, and the code should run without initial import failures. However, the linter is still flagging some type hinting issues, like the `ClaifOptions` class, and its related configuration.
 
 
 **Resolving Type Mismatches**
@@ -436,14 +436,14 @@ I've changed all problematic imports, resolving the initial `ModuleNotFoundError
 
 **Summarizing Import Corrections**
 
-I've replaced all instances of `from src.claif...` imports with relative or direct package imports, resolving the `ModuleNotFoundError`. The files impacted include `__init__.py`, `gemini.py`, `utils.py`, `config.py`, `codex.py`, and `claude.py`. While the initial import error is fixed, the linter still flags type hinting issues, particularly with `Message` types, indicating potential incompatibility between provider libraries' and `claif`'s implementations. I consider my task complete regarding the initial error.
+I've replaced all instances of `from claif...` imports with relative or direct package imports, resolving the `ModuleNotFoundError`. The files impacted include `__init__.py`, `gemini.py`, `utils.py`, `config.py`, `codex.py`, and `claude.py`. While the initial import error is fixed, the linter still flags type hinting issues, particularly with `Message` types, indicating potential incompatibility between provider libraries' and `claif`'s implementations. I consider my task complete regarding the initial error.
 
 
 </details></think>
 
 ---
 
-I've corrected the `from src.claif...` import statements in `src/claif/__init__.py`, `src/claif/providers/gemini.py`, `src/claif/common/utils.py`, `src/claif/common/config.py`, `src/claif/providers/codex.py`, and `src/claif/providers/claude.py` to resolve the `ModuleNotFoundError`.
+I've corrected the `from claif...` import statements in `src/claif/__init__.py`, `src/claif/providers/gemini.py`, `src/claif/common/utils.py`, `src/claif/common/config.py`, `src/claif/providers/codex.py`, and `src/claif/providers/claude.py` to resolve the `ModuleNotFoundError`.
 
 While doing so, I observed several linter errors related to type hinting, specifically concerning the `Message` type in the provider files. It appears the provider libraries' `Message` objects are not directly compatible with `claif`'s internal `Message` type. This is a separate issue from the `ModuleNotFoundError` but something you should be aware of for future development. The original problem should now be resolved.
 

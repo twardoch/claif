@@ -1,0 +1,48 @@
+[run]
+source = src/claif
+branch = True
+parallel = True
+omit = 
+    */tests/*
+    */__pycache__/*
+    */dist/*
+    */build/*
+    */.tox/*
+    */.venv/*
+    */venv/*
+    */__version__.py
+    */setup.py
+
+[report]
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    
+    # Debug-only code
+    def __repr__
+    if self\.debug
+    
+    # Defensive programming
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Non-runnable code
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstract
+    @abstractmethod
+    
+    # Error handlers
+    except ImportError
+    except KeyError
+    except AttributeError
+
+ignore_errors = True
+precision = 2
+show_missing = True
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

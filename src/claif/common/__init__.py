@@ -2,8 +2,8 @@
 
 from loguru import logger
 
-from src.claif.common.config import Config, load_config, save_config
-from src.claif.common.errors import (
+from claif.common.config import Config, load_config, save_config
+from claif.common.errors import (
     ClaifError,
     ClaifTimeoutError,
     ConfigurationError,
@@ -12,8 +12,8 @@ from src.claif.common.errors import (
     TransportError,
     ValidationError,
 )
-from src.claif.common.install import InstallError, find_executable, install_provider, uninstall_provider
-from src.claif.common.types import (
+from claif.common.install import InstallError, find_executable, install_provider, uninstall_provider
+from claif.common.types import (
     ClaifOptions,
     ClaifResponse,
     Message,
@@ -24,7 +24,7 @@ from src.claif.common.types import (
     ToolResultBlock,
     ToolUseBlock,
 )
-from src.claif.common.utils import format_metrics, format_response
+from claif.common.utils import format_metrics, format_response
 
 __all__ = [
     "ClaifError",

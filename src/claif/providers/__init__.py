@@ -1,7 +1,7 @@
 """Provider implementations for Claif."""
 
-from src.claif.providers.claude import ClaudeProvider
-from src.claif.providers.codex import CodexProvider
-from src.claif.providers.gemini import GeminiProvider
+from claif.providers.claude import ClaudeProvider
+from claif.providers.codex import CodexProvider
+from claif.providers.gemini import GeminiProvider
 
 __all__ = ["ClaudeProvider", "CodexProvider", "GeminiProvider"]

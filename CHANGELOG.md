@@ -5,7 +5,41 @@ All notable changes to the Claif (Command-Line Artificial Intelligence Framework
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.8] - 2025-07-02
+## [1.0.9] - 2025-01-02
+
+### Added
+- **Comprehensive Test Suite**: Added pytest test structure with 80%+ coverage target
+  - Created `pytest.ini` with coverage configuration and test markers
+  - Created `.coveragerc` for detailed coverage reporting
+  - Added test fixtures and mock providers in `conftest.py`
+  - Added unit tests for all core modules:
+    - `test_types.py` - Tests for data models (Message, ClaifOptions, ClaifResponse)
+    - `test_errors.py` - Tests for error handling hierarchy
+    - `test_config.py` - Tests for configuration management and environment variables
+    - `test_utils.py` - Tests for utility functions and formatters
+    - `test_install.py` - Tests for installation functionality
+    - `test_client.py` - Tests for client module with auto-install features
+    - `test_cli.py` - Tests for CLI functionality and commands
+    - `test_server.py` - Tests for MCP server implementation
+    - `test_providers.py` - Tests for provider implementations
+
+### Changed
+- Updated test imports to match actual implementation (fixed API mismatches)
+- Mocked all external dependencies to ensure tests run without real CLI tools
+- Implemented comprehensive async test patterns for provider interactions
+
+### Fixed
+- Fixed test structure to match actual codebase API (Message vs ClaifMessage, etc.)
+- Resolved import errors in test files
+- Updated mock implementations to match real provider behavior
+
+### Technical Improvements
+- Test coverage includes all major functionality areas
+- Proper async/await test patterns for async operations
+- Comprehensive mocking of subprocess calls and file operations
+- Tests are isolated and can run without external dependencies
+
+## [1.0.8] - 2025-01-02
 
 ### Added
 - **Auto-Install Functionality (Issue #201)**: Added comprehensive auto-install support for all provider CLI tools
@@ -21,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error handling with automatic retry after successful CLI installation
 
 ### Fixed
-- Fixed import paths from `src.claif.common.*` to relative imports (`.config`, `.errors`, etc.)
+- Fixed import paths from `claif.common.*` to relative imports (`.config`, `.errors`, etc.)
 - Fixed module import issues across all common modules and providers
 - Resolved `ImportError` issues preventing package from loading
 - Fixed provider initialization after auto-install

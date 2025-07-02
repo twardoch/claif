@@ -6,6 +6,8 @@ from pathlib import Path
 
 from loguru import logger
 
+from claif.common.utils import get_claif_bin_path
+
 
 def ensure_bun_installed() -> bool:
     """Ensure bun is installed. Install if not present."""
@@ -38,14 +40,7 @@ def ensure_bun_installed() -> bool:
 
 def get_install_location() -> Path:
     """Get the claif-owned install location for bundled executables."""
-    from platformdirs import user_data_dir
-
-    # Use platformdirs for cross-platform compatibility
-    # macOS: ~/Library/Application Support/claif/bin
-    # Linux: ~/.local/share/claif/bin
-    # Windows: %APPDATA%/claif/bin
-    claif_data_dir = Path(user_data_dir("claif", "claif"))
-    install_dir = claif_data_dir / "bin"
+    install_dir = get_claif_bin_path()
 
     # Create directory if it doesn't exist
     install_dir.mkdir(parents=True, exist_ok=True)

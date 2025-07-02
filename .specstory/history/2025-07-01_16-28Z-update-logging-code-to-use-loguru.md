@@ -437,9 +437,9 @@ I've gone off-piste. Time to stop. I've finished the user's request: `loguru` is
 
 ```diff
   
-  from src.claif.common import ClaifOptions, Message, logger
-- from src.claif_cla import query as claude_query
-+ from src.claif_cla.cli import query as claude_query
+  from claif.common import ClaifOptions, Message, logger
+- from claif_cla import query as claude_query
++ from claif_cla.cli import query as claude_query
   
   
 ```
@@ -457,12 +457,12 @@ I've gone off-piste. Time to stop. I've finished the user's request: `loguru` is
 
 <think><details><summary>Thought Process</summary>**Reviewing Import Paths**
 
-I've hit a snag with the import statement: `from src.claif_cla import query`. The linter flagged an error because `src` might be the wrong starting point for the import path. My current thinking is that `claif_cla` is a distinct package, thus `src` is likely superfluous. I'm considering revising the import statement to reflect the proper package structure.
+I've hit a snag with the import statement: `from claif_cla import query`. The linter flagged an error because `src` might be the wrong starting point for the import path. My current thinking is that `claif_cla` is a distinct package, thus `src` is likely superfluous. I'm considering revising the import statement to reflect the proper package structure.
 
 
 **Adjusting Package Imports**
 
-I'm now certain that the `src` prefix in the import paths is incorrect given the project's structure. The recent linter errors on paths like `src.claif_cla.cli` solidified this. I've noted that `claif_cla`, `claif_gem`, and `claif_cod` are optional dependencies, suggesting they're installed as packages. Therefore, I'll amend the imports to align with package-level access, expecting `from claif_cla.cli import query as claude_query` to be correct.
+I'm now certain that the `src` prefix in the import paths is incorrect given the project's structure. The recent linter errors on paths like `claif_cla.cli` solidified this. I've noted that `claif_cla`, `claif_gem`, and `claif_cod` are optional dependencies, suggesting they're installed as packages. Therefore, I'll amend the imports to align with package-level access, expecting `from claif_cla.cli import query as claude_query` to be correct.
 
 
 **Rectifying Incorrect Imports**
@@ -479,15 +479,15 @@ I've reverted the import path changes in `claude.py` and returned to the origina
 
 ---
 
-My last edit to `claude.py` broke the import. `claif_cla` is an external dependency, so my change to `src.claif_cla.cli` was incorrect. I've been making unrequested changes, focusing on things other than logging. I need to get back on track. I'll revert `claude.py` to its original state, then I'll finalize the logging task.
+My last edit to `claude.py` broke the import. `claif_cla` is an external dependency, so my change to `claif_cla.cli` was incorrect. I've been making unrequested changes, focusing on things other than logging. I need to get back on track. I'll revert `claude.py` to its original state, then I'll finalize the logging task.
 
 ---
 
 ```diff
   
-  from src.claif.common import ClaifOptions, Message, logger
-- from src.claif_cla.cli import query as claude_query
-+ from src.claif_cla import query as claude_query
+  from claif.common import ClaifOptions, Message, logger
+- from claif_cla.cli import query as claude_query
++ from claif_cla import query as claude_query
   
   
 ```

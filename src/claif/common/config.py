@@ -7,8 +7,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from src.claif.common.errors import ConfigurationError
-from src.claif.common.types import Provider
+from claif.common.errors import ConfigurationError
+from claif.common.types import Provider
 
 
 @dataclass

@@ -14,7 +14,9 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
+from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
+
+APP_NAME = "com.twardoch.claif"
 
 
 def format_response(message: Message, format: str = "text", syntax_highlighting: bool = True) -> str:
@@ -127,11 +129,17 @@ def parse_content_blocks(content: Any) -> list[ContentBlock]:
     return [TextBlock(text=str(content))]
 
 
-def get_claif_bin_path() -> Path:
-    """Get the claif bin directory path."""
+def get_claif_data_dir() -> Path:
+    """Get the claif data directory path."""
     from platformdirs import user_data_dir
 
-    claif_data_dir = Path(user_data_dir("claif", "claif"))
+    claif_data_dir = Path(user_data_dir(APP_NAME, "claif"))
+    return claif_data_dir
+
+
+def get_claif_bin_path() -> Path:
+    """Get the claif bin directory path."""
+    claif_data_dir = get_claif_data_dir()
     return claif_data_dir / "bin"
 
 

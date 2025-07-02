@@ -16,8 +16,6 @@ from rich.table import Table
 from claif.client import _client, query, query_all, query_random
 from claif.common import (
     ClaifOptions,
-    Config,
-    MessageRole,
     Provider,
     ResponseMetrics,
     format_metrics,
@@ -198,7 +196,6 @@ class ClaifCLI:
         model: str | None = None,
         temperature: float | None = None,
         system: str | None = None,
-        show_provider: bool = True,
     ) -> None:
         """Query a random provider.
 
@@ -207,7 +204,6 @@ class ClaifCLI:
             model: Model to use (if supported by selected provider)
             temperature: Sampling temperature (0-1)
             system: System prompt
-            show_provider: Show which provider was selected
         """
         options = ClaifOptions(
             model=model,
@@ -231,8 +227,8 @@ class ClaifCLI:
 
             messages = asyncio.run(track_provider())
 
-            if show_provider and selected_provider:
-                console.print(f"[cyan]Selected provider: {selected_provider.value}[/cyan]\n")
+            if selected_provider:
+                logger.debug(f"Selected provider: {selected_provider.value}")
 
             for message in messages:
                 console.print(format_response(message))
