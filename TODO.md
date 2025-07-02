@@ -1,121 +1,122 @@
-# claif TODO List - v1.x Stable MVP
+# claif TODO List - v1.0 MVP Stability Focus
 
-## Immediate Priority (v1.0.9)
+## CRITICAL (Blocking v1.0 Release)
 
-### Testing & Reliability
-- [ ] Fix pytest environment issues (xdist/coverage plugin conflicts)
-- [ ] Run full test suite to verify actual coverage
+### Core Framework Stability
+- [ ] **Fix pytest environment issues** - Resolve xdist/coverage plugin conflicts completely
+- [ ] **Verify 80%+ test coverage** - Run full test suite and confirm accurate coverage reporting
+- [ ] **Validate all error handling paths** - Ensure provider discovery and routing handle all edge cases
+- [ ] **Test provider integration** - Verify actual provider package discovery and loading
 
-### Error Handling
-- [ ] Add context to all error messages
-- [ ] Fix critical error handling gaps
-- [ ] Document all public APIs
+### Essential Quality Gates
+- [ ] **All tests pass reliably** - No flaky tests or environment-dependent failures
+- [ ] **Error messages are actionable** - Users understand what went wrong and how to fix it
+- [ ] **Auto-install works consistently** - Provider installation succeeds in clean environments
 
-### Remaining Tasks
-- [ ] Set up GitHub Actions CI/CD
-
-## Short-term Priority (v1.1.0)
-
-### Integration Testing
-- [ ] Test actual provider package integration
-- [ ] Cross-platform testing (Windows, macOS, Linux)
-- [ ] Test CLI tool detection and installation
-- [ ] Test parallel provider queries
-- [ ] Test MCP server functionality
+## HIGH PRIORITY (Required for Stable Release)
 
 ### Cross-Platform Reliability
-- [ ] Verify path handling on all platforms
-- [ ] Test subprocess execution differences
-- [ ] Handle platform-specific quirks
-- [ ] Test with different Python versions (3.8+)
+- [ ] **Test on Windows, macOS, Linux** - Verify all core functionality works across platforms
+- [ ] **Path handling robustness** - Support spaces, Unicode characters, special paths
+- [ ] **Python version compatibility** - Verify Python 3.8+ support
+- [ ] **Subprocess execution** - Handle platform-specific differences
 
-### CI/CD Pipeline
-- [ ] Set up GitHub Actions for testing
-- [ ] Automated linting and formatting
-- [ ] Cross-platform test matrix
-- [ ] Release automation to PyPI
+### Build & Installation Verification
+- [ ] **Local build testing** - Verify `python -m build` works correctly
+- [ ] **Installation from packages** - Test wheel and sdist installation
+- [ ] **Dependency resolution** - Ensure all dependencies install properly
+- [ ] **Package metadata validation** - Correct entry points, classifiers, etc.
 
-### Documentation
-- [ ] Complete docstrings for all public functions
-- [ ] Type hints with full coverage
-- [ ] Installation guide for all platforms
-- [ ] Configuration guide with examples
-- [ ] Troubleshooting section
+### Basic CI/CD
+- [ ] **GitHub Actions setup** - Automated testing on push/PR
+- [ ] **Cross-platform test matrix** - Windows, macOS, Linux runners
+- [ ] **Automated linting** - Ruff, formatting checks
+- [ ] **Coverage reporting** - Track and enforce coverage standards
 
-## Medium-term Priority (v1.2.0)
+## MEDIUM PRIORITY (Nice to Have for v1.0)
 
-### Performance Optimization
-- [ ] Profile import times
-- [ ] Lazy load providers
-- [ ] Optimize dependency loading
-- [ ] Cache provider discovery
-- [ ] Minimize subprocess overhead
-- [ ] Optimize async operations
-- [ ] Reduce memory footprint
+### Documentation Essentials
+- [ ] **Installation guide** - Clear setup instructions for all platforms
+- [ ] **Basic usage examples** - Core functionality demonstrations
+- [ ] **Troubleshooting section** - Common issues and solutions
+- [ ] **API documentation** - Complete docstrings for public interfaces
 
-### Enhanced Configuration
-- [ ] Validate configuration schema
-- [ ] Add configuration migration
-- [ ] Environment variable support
-- [ ] Per-provider configuration
+### Release Infrastructure
+- [ ] **TestPyPI integration** - Test deployment process
+- [ ] **Version coordination** - Manage dependencies between packages
+- [ ] **Release automation** - Streamline PyPI publishing
 
-### Extended Documentation
-- [ ] Generate API docs with Sphinx/mkdocs
-- [ ] Provider comparison table
-- [ ] Best practices guide
-- [ ] Performance tuning guide
+## SUCCESS CRITERIA FOR v1.0
 
-## Package Building & Release
+### Reliability (Must Have)
+- ✅ **99%+ success rate** for basic provider operations
+- ✅ **No resource leaks** in normal operation
+- ✅ **Graceful error handling** with clear messages
+- ✅ **Consistent behavior** across platforms
 
-### Build Process
-- [ ] Verify `python -m build` works correctly
-- [ ] Test wheel and sdist generation
-- [ ] Validate package metadata
-- [ ] Test installation from built packages
+### Testing (Must Have)
+- ✅ **80%+ test coverage** with verified accuracy
+- ✅ **All critical paths tested** including error conditions
+- ✅ **Mocked external dependencies** for reliable testing
+- ✅ **CI pipeline passing** on all platforms
 
-### Version Management
-- [ ] Handle different CLI tool versions
-- [ ] Graceful handling of API changes
-- [ ] Version detection and warnings
-- [ ] Compatibility matrix documentation
+### User Experience (Should Have)
+- ✅ **One-command installation** that works reliably
+- ✅ **Clear error messages** for common problems
+- ✅ **Basic documentation** for setup and usage
+- ✅ **Fast startup time** (<2 seconds)
 
-## Quality Standards Checklist
+## NON-GOALS FOR v1.0
 
-### Code Quality
-- [ ] Type hints on all functions
-- [ ] Docstrings following Google style
-- [ ] Maximum line length: 120 characters
-- [ ] Consistent naming conventions
-- [ ] No complex nested functions
+Explicitly excluding to maintain focus:
 
-### Testing Standards
-- [ ] Unit tests for all modules
-- [ ] Integration tests for workflows
-- [ ] Mock external dependencies
-- [ ] Test error conditions
-- [ ] Performance benchmarks
+- ❌ **Performance optimization** beyond basic functionality
+- ❌ **Advanced configuration** options
+- ❌ **Complex caching systems**
+- ❌ **Multi-user support**
+- ❌ **Database backends**
+- ❌ **UI enhancements** beyond terminal output
+- ❌ **Provider rotation** or failover logic
+- ❌ **Session persistence** across runs
 
-### Documentation Standards
-- [ ] README with clear examples
-- [ ] API documentation
-- [ ] Architecture documentation
-- [ ] Contributing guidelines
-- [ ] Changelog maintenance
+## RISK MITIGATION
 
-## Success Metrics
+### High Risk Items
+1. **pytest environment issues** → Fix first, test in clean environments
+2. **Cross-platform failures** → Use GitHub Actions matrix early
+3. **Provider discovery bugs** → Comprehensive edge case testing
 
-- [ ] **Reliability**: 99% success rate for basic operations
-- [ ] **Performance**: < 100ms overhead per operation
-- [ ] **Compatibility**: Works on Python 3.8+ on all major platforms
-- [ ] **Testing**: 80%+ code coverage with CI/CD
-- [ ] **Documentation**: Complete user and API docs
-- [ ] **Error Handling**: Clear, actionable error messages
-- [ ] **Installation**: One-command setup that always works
+### Medium Risk Items  
+1. **Documentation gaps** → Focus on installation and basic usage
+2. **Build/install issues** → Test with fresh environments regularly
 
-## Non-Goals for v1.x
+## DEFINITION OF DONE
 
-- Complex UI features
-- Database backends
-- Advanced caching systems
-- Multi-user features
-- Custom provider SDKs
+For each task to be considered complete:
+
+- [ ] **Implementation** meets requirements
+- [ ] **Tests** cover the functionality (unit + integration)
+- [ ] **Documentation** updated if needed
+- [ ] **Error handling** includes clear messages
+- [ ] **Cross-platform** compatibility verified
+- [ ] **Code review** completed (self-review minimum)
+
+## POST-v1.0 ROADMAP
+
+### v1.1 (Performance & Polish)
+- Import time optimization
+- Enhanced configuration system
+- Performance profiling and optimization
+- Extended documentation
+
+### v1.2 (Advanced Features)
+- Provider rotation and failover
+- Response caching
+- Session management
+- Advanced error recovery
+
+### v2.0 (Major Features)
+- Plugin ecosystem
+- Advanced UI features
+- Multi-user support
+- Performance rewrite

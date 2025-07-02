@@ -1,193 +1,207 @@
-# Claif Development Plan - v1.x Stable MVP
+# claif Development Plan - v1.0 MVP Stability Focus
 
-## Overview
+## Executive Summary
 
-CLAIF (Command-Line Artificial Intelligence Framework) is a unified interface for interacting with multiple AI language model providers. The goal is to create a stable, solid v1.x MVP that works reliably cross-platform.
+**Objective**: Create a stable, reliable v1.0 core framework that serves as a solid foundation for provider packages.
 
-## Current Status (v1.0.9)
+**Current Status**: Working MVP with auto-install and basic testing infrastructure. Need to focus on stability and cross-platform reliability.
 
-**Core Framework**: Production-ready with auto-install functionality ✅
-**Provider Discovery**: Plugin-based system using Python entry points ✅
-**CLI Interface**: Fire-based with clean output ✅
-**MCP Server**: FastMCP integration for tools ✅
-**Test Suite**: Comprehensive pytest structure with mocks ✅
+**Release Criteria**: 80%+ verified test coverage, reliable provider discovery, cross-platform compatibility, clear error handling.
 
-## MVP v1.x Improvement Plan
+## Critical Stability Phase (Blocking v1.0)
 
-### 1. Testing & Reliability (Critical)
+### Core Framework Hardening
+**Timeline**: 1-2 weeks
+**Priority**: CRITICAL
 
-#### Unit Testing
-- [x] Add pytest-based test suite for core framework
-  - [x] Test provider discovery mechanism
-  - [x] Test auto-install functionality
-  - [x] Test CLI argument parsing
-  - [x] Test configuration loading
-  - [x] Test error handling paths
-- [x] Mock external dependencies (CLI tools)
-- [x] Test async operations and timeout handling
-- [x] Achieve 80%+ code coverage (structure ready, needs environment fix)
+- **Fix pytest environment issues** - Resolve xdist/coverage conflicts completely
+- **Verify 80%+ test coverage** - Run full test suite, confirm accurate coverage reporting  
+- **Validate error handling paths** - Ensure provider discovery handles all edge cases
+- **Test provider integration** - Verify actual provider package discovery and loading
 
-#### Integration Testing
-- [ ] Test actual provider package integration
-- [ ] Cross-platform testing (Windows, macOS, Linux)
-- [x] Test CLI tool detection and installation
-- [x] Test parallel provider queries
-- [x] Test MCP server functionality
+**Success Criteria**: All tests pass reliably, coverage is accurate, error paths tested
 
-#### Cross-Platform Reliability
-- [ ] Verify path handling on all platforms
-- [ ] Test subprocess execution differences
-- [ ] Handle platform-specific quirks
-- [ ] Test with different Python versions (3.8+)
+### Essential Quality Gates
+**Timeline**: 1 week
+**Priority**: CRITICAL
 
-### 2. Error Handling & Resilience
+- **Eliminate flaky tests** - No environment-dependent test failures
+- **Actionable error messages** - Users understand problems and solutions
+- **Consistent auto-install** - Provider installation works in clean environments
 
-#### Improved Error Messages
-- [ ] Add context to all error messages
-- [ ] Provide actionable solutions for common errors
-- [ ] Better handling of missing API keys
-- [ ] Clear messages for network failures
-- [ ] Helpful hints for installation issues
+**Success Criteria**: 99%+ test reliability, clear error messaging, robust auto-install
 
-#### Graceful Degradation
-- [ ] Handle provider failures without crashing
-- [ ] Retry logic for transient failures
-- [ ] Timeout handling for hanging operations
-- [ ] Fallback options when providers unavailable
+## Release Readiness Phase (Required for v1.0)
 
-### 3. Documentation & Examples
+### Cross-Platform Reliability  
+**Timeline**: 2-3 weeks
+**Priority**: HIGH
 
-#### API Documentation
-- [ ] Complete docstrings for all public functions
-- [ ] Type hints with full coverage
-- [ ] Generate API docs with Sphinx/mkdocs
-- [ ] Include usage examples in docstrings
+- **Multi-platform testing** - Windows, macOS, Linux compatibility verification
+- **Path handling robustness** - Support spaces, Unicode, special characters
+- **Python version compatibility** - Verify Python 3.8+ support
+- **Subprocess execution** - Handle platform-specific differences
 
-#### User Documentation
-- [ ] Installation guide for all platforms
-- [ ] Configuration guide with examples
-- [ ] Troubleshooting section
-- [ ] Provider comparison table
-- [ ] Best practices guide
+**Success Criteria**: Verified functionality on all major platforms
 
-### 4. Performance & Optimization
+### Build & Installation Verification
+**Timeline**: 1-2 weeks  
+**Priority**: HIGH
 
-#### Startup Performance
-- [ ] Profile import times
-- [ ] Lazy load providers
-- [ ] Optimize dependency loading
-- [ ] Cache provider discovery
+- **Local build testing** - `python -m build` works correctly
+- **Package installation** - Test wheel and sdist installation 
+- **Dependency resolution** - All dependencies install properly
+- **Metadata validation** - Entry points, classifiers correct
 
-#### Runtime Performance
-- [ ] Minimize subprocess overhead
-- [ ] Optimize async operations
-- [ ] Reduce memory footprint
-- [ ] Profile and optimize hot paths
+**Success Criteria**: Reliable build and install process
 
-### 5. Build & Release Process
+### Basic CI/CD Infrastructure
+**Timeline**: 1-2 weeks
+**Priority**: HIGH
 
-#### Package Building
-- [ ] Verify `python -m build` works correctly
-- [ ] Test wheel and sdist generation
-- [ ] Validate package metadata
-- [ ] Test installation from built packages
+- **GitHub Actions setup** - Automated testing on push/PR
+- **Cross-platform matrix** - Windows, macOS, Linux test runners
+- **Automated linting** - Ruff, formatting checks
+- **Coverage reporting** - Track and enforce coverage standards
 
-#### CI/CD Pipeline
-- [ ] GitHub Actions for testing
-- [ ] Automated linting and formatting
-- [ ] Cross-platform test matrix
-- [ ] Release automation to PyPI
+**Success Criteria**: Automated testing pipeline working reliably
 
-### 6. Configuration & Compatibility
+## Polish Phase (Nice to Have for v1.0)
 
-#### Configuration System
-- [ ] Validate configuration schema
-- [ ] Add configuration migration
-- [ ] Environment variable support
-- [ ] Per-provider configuration
+### Essential Documentation
+**Timeline**: 1-2 weeks
+**Priority**: MEDIUM
 
-#### Version Compatibility
-- [ ] Handle different CLI tool versions
-- [ ] Graceful handling of API changes
-- [ ] Version detection and warnings
-- [ ] Compatibility matrix documentation
+- **Installation guide** - Clear setup instructions for all platforms
+- **Basic usage examples** - Core functionality demonstrations  
+- **Troubleshooting section** - Common issues and solutions
+- **API documentation** - Complete docstrings for public interfaces
 
-## Architecture Improvements
+**Success Criteria**: Users can install and use without confusion
 
-### Core Framework Structure
+### Release Infrastructure
+**Timeline**: 1 week
+**Priority**: MEDIUM
+
+- **TestPyPI integration** - Test deployment process
+- **Version coordination** - Manage dependencies between packages  
+- **Release automation** - Streamline PyPI publishing
+
+**Success Criteria**: Automated, reliable release process
+
+## Architecture Focus
+
+### Core Framework Structure (Current)
 ```
 claif/
-├── __init__.py         # Clean public API
+├── __init__.py         # Clean public API ✅
 ├── common/
-│   ├── types.py       # Well-documented types
-│   ├── config.py      # Robust configuration
-│   ├── errors.py      # Comprehensive errors
-│   └── utils.py       # Tested utilities
+│   ├── types.py       # Well-documented types ✅  
+│   ├── config.py      # Robust configuration ✅
+│   ├── errors.py      # Comprehensive errors ✅
+│   └── utils.py       # Rich utilities ✅
 ├── providers/
-│   ├── base.py        # Abstract provider interface
-│   ├── claude.py      # Stable Claude wrapper
-│   ├── gemini.py      # Stable Gemini wrapper
-│   └── codex.py       # Stable Codex wrapper
-├── client.py          # Tested client with retries
-├── cli.py             # User-friendly CLI
-├── server.py          # Reliable MCP server
-└── install.py         # Cross-platform installer
+│   ├── base.py        # Abstract provider interface ✅
+│   └── __init__.py    # Provider discovery ✅
+├── client.py          # Tested client with retries ✅
+├── cli.py             # User-friendly CLI ✅
+├── server.py          # Reliable MCP server ✅
+└── install.py         # Cross-platform installer ✅
 ```
 
-## Quality Standards
+### Stability Improvements Needed
 
-### Code Quality
-- Type hints on all functions
-- Docstrings following Google style
-- Maximum line length: 120 characters
-- Consistent naming conventions
-- No complex nested functions
+- **Provider Discovery**: Handle edge cases, missing packages, version conflicts
+- **Error Handling**: Clear messages for network, permission, configuration issues
+- **Testing**: Fix environment issues, achieve verified 80%+ coverage
+- **Cross-Platform**: Windows path handling, subprocess differences
 
-### Testing Standards
-- Unit tests for all modules
-- Integration tests for workflows
-- Mock external dependencies
-- Test error conditions
-- Performance benchmarks
+## Success Metrics for v1.0
 
-### Documentation Standards
-- README with clear examples
-- API documentation
-- Architecture documentation
-- Contributing guidelines
-- Changelog maintenance
+### Reliability (Must Have)
+- ✅ **99%+ success rate** for provider discovery and basic operations
+- ✅ **No resource leaks** or hanging processes
+- ✅ **Graceful error handling** with actionable messages
+- ✅ **Consistent behavior** across all platforms
 
-## Success Criteria for v1.x
+### Testing (Must Have)  
+- ✅ **80%+ test coverage** with verified accuracy
+- ✅ **All critical paths tested** including error conditions
+- ✅ **Mocked dependencies** for reliable testing
+- ✅ **CI pipeline** passing on all platforms
 
-1.  **Reliability**: 99% success rate for basic operations
-2.  **Performance**: < 100ms overhead per operation
-3.  **Compatibility**: Works on Python 3.8+ on all major platforms
-4.  **Testing**: 80%+ code coverage with CI/CD
-5.  **Documentation**: Complete user and API docs
-6.  **Error Handling**: Clear, actionable error messages
-7.  **Installation**: One-command setup that always works
+### User Experience (Should Have)
+- ✅ **One-command installation** that works reliably
+- ✅ **Clear error messages** for common problems  
+- ✅ **Basic documentation** for setup and usage
+- ✅ **Fast startup time** (<2 seconds)
 
-## Development Priorities
+## Resource Allocation
 
-### Immediate (v1.0.9)
-1.  Fix pytest environment issues and verify coverage
-2.  Set up GitHub Actions CI/CD
+### Critical Path (80% of effort)
+1. **Testing Infrastructure** (40%) - Fix pytest issues, verify coverage
+2. **Cross-Platform Support** (25%) - Windows compatibility, path handling  
+3. **Error Handling** (15%) - Clear messages, edge case handling
 
-### Short-term (v1.1.0)
-1.  Complete cross-platform testing
-2.  Publish to PyPI
+### Secondary Path (20% of effort)  
+1. **CI/CD Setup** (10%) - GitHub Actions, automated testing
+2. **Documentation** (10%) - Installation guides, basic usage
 
-### Medium-term (v1.2.0)
-1.  Performance optimizations
-2.  Enhanced configuration system
-3.  Extended documentation
+## Risk Management
 
-## Non-Goals for v1.x
+### High Risk Issues
+1. **pytest environment problems** → Could block entire release
+   - **Mitigation**: Fix first, test in multiple clean environments
+2. **Cross-platform failures** → Could limit adoption
+   - **Mitigation**: Use GitHub Actions matrix early and often
+3. **Provider discovery bugs** → Core functionality broken
+   - **Mitigation**: Comprehensive edge case testing
 
--   Complex UI features
--   Database backends
--   Advanced caching systems
--   Multi-user features
--   Custom provider SDKs
+### Medium Risk Issues
+1. **Documentation gaps** → User confusion
+   - **Mitigation**: Focus on installation and basic usage first
+2. **Performance issues** → Poor user experience  
+   - **Mitigation**: Profile critical paths, basic optimization
 
-Keep the codebase lean, focused, and reliable. Every feature must contribute to stability and cross-platform compatibility.
+## Non-Goals for v1.0
+
+Explicitly excluding to maintain focus:
+
+- ❌ **Performance optimization** beyond basic functionality
+- ❌ **Advanced configuration** systems
+- ❌ **Complex caching** mechanisms  
+- ❌ **Provider rotation** or failover logic
+- ❌ **Session management** across runs
+- ❌ **Database backends** or persistence
+- ❌ **Multi-user support**
+- ❌ **UI enhancements** beyond terminal output
+
+## Timeline & Milestones
+
+**Total Estimated Time**: 4-6 weeks
+
+- **Weeks 1-2**: Core stability (pytest fixes, testing, error handling)
+- **Weeks 3-4**: Cross-platform support and CI/CD  
+- **Weeks 5-6**: Documentation, polish, release preparation
+
+**Release Target**: Mid Q1 2025
+
+## Post-v1.0 Roadmap
+
+### v1.1 (Performance & Polish)
+- Import time optimization and lazy loading
+- Enhanced configuration system
+- Performance profiling and optimization  
+- Extended documentation and examples
+
+### v1.2 (Advanced Features)
+- Provider rotation and intelligent failover
+- Response caching and session management
+- Advanced error recovery strategies
+- Plugin ecosystem foundations
+
+### v2.0 (Major Features)
+- Complete plugin architecture
+- Advanced UI and visualization features
+- Multi-user and collaborative features
+- Performance rewrite with async optimization
