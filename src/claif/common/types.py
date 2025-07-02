@@ -90,6 +90,7 @@ class ClaifOptions:
     cache: bool = False
     retry_count: int = 3
     retry_delay: float = 1.0
+    no_retry: bool = False
 
 
 @dataclass
