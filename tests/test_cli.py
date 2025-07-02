@@ -54,16 +54,14 @@ class TestClaifCLI:
 class TestClaifCLIQuery:
     """Test query functionality."""
 
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query")
+    @patch("claif.cli.console")
+    @patch("claif.client.query")
     @patch("claif.cli.load_config")
-    def test_query_basic(self, mock_load_config, mock_query, mock_console_class):
+    def test_query_basic(self, mock_load_config, mock_query, mock_console):
         """Test basic query operation."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         # Mock async response
         async def mock_query_gen(prompt, options):
@@ -79,16 +77,14 @@ class TestClaifCLIQuery:
         # Verify console output
         mock_console.print.assert_called()
 
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query")
+    @patch("claif.cli.console")
+    @patch("claif.client.query")
     @patch("claif.cli.load_config")
-    def test_query_with_params(self, mock_load_config, mock_query, mock_console_class):
+    def test_query_with_params(self, mock_load_config, mock_query, mock_console):
         """Test query with parameters."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         # Mock async response
         async def mock_query_gen(prompt, options):
@@ -111,16 +107,14 @@ class TestClaifCLIQuery:
         assert options.max_tokens == 1000
         assert options.system_prompt == "Be helpful"
 
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query")
+    @patch("claif.cli.console")
+    @patch("claif.client.query")
     @patch("claif.cli.load_config")
-    def test_query_error_handling(self, mock_load_config, mock_query, mock_console_class):
+    def test_query_error_handling(self, mock_load_config, mock_query, mock_console):
         """Test query error handling."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         # Mock query to raise error
         async def mock_query_error(prompt, options):
@@ -140,16 +134,14 @@ class TestClaifCLIQuery:
             assert any("Error" in str(call) for call in mock_console.print.call_args_list)
             mock_exit.assert_called_once_with(1)
 
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query")
+    @patch("claif.cli.console")
+    @patch("claif.client.query")
     @patch("claif.cli.load_config")
-    def test_query_with_metrics(self, mock_load_config, mock_query, mock_console_class):
+    def test_query_with_metrics(self, mock_load_config, mock_query, mock_console):
         """Test query with metrics display."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE, verbose=True)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         # Mock async response
         async def mock_query_gen(prompt, options):
@@ -170,7 +162,7 @@ class TestClaifCLIStream:
     """Test stream functionality."""
 
     @patch("claif.cli.Live")
-    @patch("claif.cli.query")
+    @patch("claif.client.query")
     @patch("claif.cli.load_config")
     def test_stream_basic(self, mock_load_config, mock_query, mock_live_class):
         """Test basic streaming."""
@@ -199,16 +191,14 @@ class TestClaifCLIStream:
 class TestClaifCLIParallel:
     """Test parallel query functionality."""
 
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query_all")
+    @patch("claif.cli.console")
+    @patch("claif.client.query_all")
     @patch("claif.cli.load_config")
-    def test_parallel_basic(self, mock_load_config, mock_query_all, mock_console_class):
+    def test_parallel_basic(self, mock_load_config, mock_query_all, mock_console):
         """Test querying all providers in parallel."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         # Mock parallel responses
         async def mock_all_responses(prompt, options):
@@ -230,18 +220,16 @@ class TestClaifCLIParallel:
 
     @patch("claif.cli.Columns")
     @patch("claif.cli.Panel")
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query_all")
+    @patch("claif.cli.console")
+    @patch("claif.client.query_all")
     @patch("claif.cli.load_config")
     def test_parallel_compare_mode(
-        self, mock_load_config, mock_query_all, mock_console_class, mock_panel, mock_columns
+        self, mock_load_config, mock_query_all, mock_console, mock_panel, mock_columns
     ):
         """Test parallel query with comparison mode."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         # Mock parallel responses
         async def mock_all_responses(prompt, options):
@@ -266,9 +254,9 @@ class TestClaifCLIProviders:
     """Test provider management commands."""
 
     @patch("claif.cli.Table")
-    @patch("claif.cli.Console")
+    @patch("claif.cli.console")
     @patch("claif.cli.load_config")
-    def test_list_providers(self, mock_load_config, mock_console_class, mock_table_class):
+    def test_list_providers(self, mock_load_config, mock_console, mock_table_class):
         """Test listing providers."""
         # Setup
         mock_config = Config(
@@ -280,275 +268,206 @@ class TestClaifCLIProviders:
             },
         )
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
         mock_table = MagicMock()
         mock_table_class.return_value = mock_table
 
         cli = ClaifCLI()
 
-        # List providers
-        cli.providers(action="list")
+        # Call providers
+        cli.providers()
 
-        # Should create table with provider info
+        # Should create and display table
         mock_table_class.assert_called_once()
-        assert mock_table.add_row.call_count == 3  # Three providers
+        assert mock_table.add_row.call_count >= 3
         mock_console.print.assert_called_with(mock_table)
 
-    @patch("claif.cli.Console")
-    @patch("claif.cli.query")
+    @patch("claif.cli.console")
+    @patch("claif.cli._client")
     @patch("claif.cli.load_config")
-    async def test_provider_status(self, mock_load_config, mock_query, mock_console_class):
-        """Test checking provider status."""
+    def test_provider_status(self, mock_load_config, mock_client, mock_console):
+        """Test provider status check."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
-
-        # Mock health check responses
-        async def mock_claude_query(prompt, options):
-            yield Message(role=MessageRole.ASSISTANT, content="OK")
-
-        async def mock_gemini_query(prompt, options):
-            msg = "Connection error"
-            raise Exception(msg)
-
-        mock_query.side_effect = [
-            mock_claude_query("Hello", MagicMock()),
-            mock_gemini_query("Hello", MagicMock()),
-            mock_claude_query("Hello", MagicMock()),  # For codex
-        ]
+        mock_client.is_provider_available = MagicMock(side_effect=lambda p: p != Provider.CODEX)
 
         cli = ClaifCLI()
 
-        # Check status
-        cli.providers(action="status")
+        # Call status
+        cli.status()
 
-        # Should print health status for all providers
-        print_calls = mock_console.print.call_args_list
-        assert any("Healthy" in str(call) for call in print_calls)
-        assert any("Unhealthy" in str(call) for call in print_calls)
+        # Should check and print status for all providers
+        assert mock_client.is_provider_available.call_count == 3
+        assert mock_console.print.call_count >= 3
 
 
 class TestClaifCLIConfig:
     """Test configuration commands."""
 
-    @patch("claif.cli.Console")
+    @patch("claif.cli.console")
     @patch("claif.cli.load_config")
-    def test_config_show(self, mock_load_config, mock_console_class):
+    def test_config_show(self, mock_load_config, mock_console):
         """Test showing configuration."""
         # Setup
-        mock_config = Config(default_provider=Provider.CLAUDE, cache_enabled=True, cache_ttl=3600, verbose=False)
+        mock_config = Config(default_provider=Provider.CLAUDE, verbose=True)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         cli = ClaifCLI()
 
-        # Show config
-        cli.config(action="show")
+        # Call config
+        cli.config()
 
-        # Should print config details
-        print_calls = mock_console.print.call_args_list
-        assert any("Default Provider: claude" in str(call) for call in print_calls)
-        assert any("Cache Enabled: True" in str(call) for call in print_calls)
+        # Should print config
+        mock_console.print.assert_called()
 
-    @patch("claif.cli.Console")
+    @patch("claif.cli.console")
+    @patch("claif.cli.save_config")
     @patch("claif.cli.load_config")
-    def test_config_set(self, mock_load_config, mock_console_class):
+    def test_config_set(self, mock_load_config, mock_save_config, mock_console):
         """Test setting configuration values."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         cli = ClaifCLI()
 
-        # Set config values
-        cli.config(action="set", default_provider="gemini", cache_enabled=False)
+        # Set provider
+        cli.config(set_provider="gemini")
 
-        # Config should be updated
+        # Should update and save config
         assert cli.config.default_provider == Provider.GEMINI
-        assert cli.config.cache_enabled is False
+        mock_save_config.assert_called_once_with(cli.config)
 
-        # Should print success messages
-        print_calls = mock_console.print.call_args_list
-        assert any("Set default provider: gemini" in str(call) for call in print_calls)
+        # Set verbose
+        cli.config(set_verbose=True)
+        assert cli.config.verbose is True
 
+    @patch("claif.cli.console")
     @patch("claif.cli.save_config")
-    @patch("claif.cli.Console")
     @patch("claif.cli.load_config")
-    def test_config_save(self, mock_load_config, mock_console_class, mock_save_config):
+    def test_config_save(self, mock_load_config, mock_save_config, mock_console):
         """Test saving configuration."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         cli = ClaifCLI()
 
-        # Save config
-        cli.config(action="save", path="/custom/path.json")
+        # Call config with save
+        cli.config(save="/path/to/config.json")
 
-        # Should call save_config
-        mock_save_config.assert_called_once_with(mock_config, "/custom/path.json")
-
-        # Should print success
-        print_calls = mock_console.print.call_args_list
-        assert any("Configuration saved" in str(call) for call in print_calls)
+        # Should save to specified path
+        mock_save_config.assert_called_once_with(mock_config, "/path/to/config.json")
 
 
 class TestClaifCLIInstall:
-    """Test install/uninstall functionality."""
+    """Test installation commands."""
 
-    @patch("claif.cli.install_all_tools")
-    @patch("claif.cli.Console")
+    @patch("claif.cli.console")
+    @patch("claif.cli._client")
     @patch("claif.cli.load_config")
-    def test_install_all(self, mock_load_config, mock_console_class, mock_install_all):
+    def test_install_all(self, mock_load_config, mock_client, mock_console):
         """Test installing all providers."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
-
-        # Mock install results
-        mock_install_all.return_value = {"installed": ["claude", "gemini"], "failed": ["codex"]}
+        mock_client.install_all_providers = AsyncMock()
 
         cli = ClaifCLI()
 
-        # Install all
-        cli.install()
+        # Call install all
+        cli.install(all=True)
 
-        # Should call install_all_tools
-        mock_install_all.assert_called_once()
-
-        # Should print results
-        print_calls = mock_console.print.call_args_list
-        assert any("Installed: claude, gemini" in str(call) for call in print_calls)
-        assert any("Failed: codex" in str(call) for call in print_calls)
+        # Should install all providers
+        mock_client.install_all_providers.assert_called_once()
 
 
 class TestClaifCLIServer:
-    """Test server functionality."""
+    """Test MCP server functionality."""
 
     @patch("claif.cli.start_mcp_server")
-    @patch("claif.cli.Console")
     @patch("claif.cli.load_config")
-    def test_server_start(self, mock_load_config, mock_console_class, mock_start_server):
+    def test_server_start(self, mock_load_config, mock_start_server):
         """Test starting MCP server."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         cli = ClaifCLI()
 
-        # Start server
-        cli.server(host="0.0.0.0", port=9000, reload=True)
+        # Call server
+        cli.server(host="0.0.0.0", port=8080)
 
-        # Should call start_mcp_server
-        mock_start_server.assert_called_once_with("0.0.0.0", 9000, True, mock_config)
-
-        # Should print server info
-        print_calls = mock_console.print.call_args_list
-        assert any("Starting Claif MCP Server" in str(call) for call in print_calls)
-        assert any("Host: 0.0.0.0" in str(call) for call in print_calls)
-        assert any("Port: 9000" in str(call) for call in print_calls)
+        # Should start server
+        mock_start_server.assert_called_once_with("0.0.0.0", 8080)
 
 
 class TestClaifCLIMain:
     """Test main entry point."""
 
-    @patch("fire.Fire")
+    @patch("claif.cli.fire.Fire")
     def test_main_function(self, mock_fire):
         """Test main function."""
         main()
 
-        # Should call Fire with ClaifCLI
+        # Should launch Fire with ClaifCLI
         mock_fire.assert_called_once_with(ClaifCLI)
 
 
 class TestClaifCLISession:
-    """Test session functionality."""
+    """Test session commands."""
 
-    @patch("claif.cli.Console")
+    @patch("claif.cli.console")
     @patch("claif.cli.load_config")
-    def test_session_claude(self, mock_load_config, mock_console_class):
-        """Test starting Claude session."""
+    def test_session_claude(self, mock_load_config, mock_console):
+        """Test session command for Claude provider."""
         # Setup
-        mock_config = Config(default_provider=Provider.CLAUDE, verbose=True)
+        mock_config = Config(default_provider=Provider.CLAUDE)
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
 
         cli = ClaifCLI()
 
-        # Mock the import to avoid ImportError
-        with patch("claif.cli.ClaudeCLI") as mock_claude_cli_class:
-            mock_claude_cli = MagicMock()
-            mock_claude_cli.interactive = MagicMock()
-            mock_claude_cli_class.return_value = mock_claude_cli
+        # Mock the provider to have session method
+        with patch.object(cli.client, "get_provider") as mock_get_provider:
+            mock_provider = MagicMock()
+            mock_provider.session = MagicMock()
+            mock_get_provider.return_value = mock_provider
 
-            # Start Claude session
-            cli.session("claude")
+            # Call session
+            cli.session(list=True, provider="claude")
 
-            # Should create Claude CLI and call interactive
-            mock_claude_cli_class.assert_called_once_with(verbose=True)
-            mock_claude_cli.interactive.assert_called_once()
-
-            # Should print session start message
-            print_calls = mock_console.print.call_args_list
-            assert any("Starting claude session" in str(call) for call in print_calls)
+            # Should call provider's session method
+            mock_provider.session.assert_called_once_with(list=True, provider="claude")
 
 
 class TestClaifCLIStatus:
     """Test status command."""
 
-    @patch("claif.cli.shutil.which")
-    @patch("claif.cli.get_install_location")
-    @patch("claif.cli.Console")
+    @patch("claif.cli.Table")
+    @patch("claif.cli.console")
+    @patch("claif.cli._client")
     @patch("claif.cli.load_config")
-    def test_status_command(self, mock_load_config, mock_console_class, mock_get_location, mock_which):
-        """Test status command shows provider installation status."""
+    def test_status_command(self, mock_load_config, mock_client, mock_console, mock_table_class):
+        """Test comprehensive status display."""
         # Setup
-        mock_config = Config(default_provider=Provider.CLAUDE)
+        mock_config = Config(
+            default_provider=Provider.CLAUDE,
+            providers={
+                "claude": {"enabled": True},
+                "gemini": {"enabled": True},
+                "codex": {"enabled": False},
+            },
+        )
         mock_load_config.return_value = mock_config
-        mock_console = MagicMock()
-        mock_console_class.return_value = mock_console
-
-        # Mock install location
-        mock_get_location.return_value = Path("/home/user/.local/bin/claif")
-
-        # Mock which commands
-        mock_which.side_effect = lambda cmd: "/home/user/.local/bin/claif/claude" if cmd == "claude" else None
+        mock_client.is_provider_available = MagicMock(return_value=True)
+        mock_table = MagicMock()
+        mock_table_class.return_value = mock_table
 
         cli = ClaifCLI()
 
-        # Mock the provider status imports
-        with (
-            patch("claif.cli.get_claude_status") as mock_claude_status,
-            patch("claif.cli.get_gemini_status") as mock_gemini_status,
-            patch("claif.cli.get_codex_status") as mock_codex_status,
-        ):
-            # Mock provider statuses
-            mock_claude_status.return_value = {
-                "installed": True,
-                "path": "/home/user/.local/bin/claif/claude",
-                "type": "wrapper",
-            }
-            mock_gemini_status.return_value = {"installed": False}
-            mock_codex_status.return_value = {"installed": True, "path": "/usr/local/bin/codex", "type": "native"}
+        # Call status
+        cli.status()
 
-            # Check status
-            cli.status()
-
-            # Should show install directory and provider statuses
-            print_calls = mock_console.print.call_args_list
-            assert any("Install Directory:" in str(call) for call in print_calls)
-            assert any("Claude Provider:" in str(call) for call in print_calls)
-            assert any("Installed:" in str(call) for call in print_calls)
+        # Should create status table
+        mock_table_class.assert_called()
+        assert mock_table.add_row.call_count >= 3

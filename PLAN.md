@@ -159,38 +159,35 @@ claif/
 
 ## Success Criteria for v1.x
 
-1. **Reliability**: 99% success rate for basic operations
-2. **Performance**: < 100ms overhead per operation
-3. **Compatibility**: Works on Python 3.8+ on all major platforms
-4. **Testing**: 80%+ code coverage with CI/CD
-5. **Documentation**: Complete user and API docs
-6. **Error Handling**: Clear, actionable error messages
-7. **Installation**: One-command setup that always works
+1.  **Reliability**: 99% success rate for basic operations
+2.  **Performance**: < 100ms overhead per operation
+3.  **Compatibility**: Works on Python 3.8+ on all major platforms
+4.  **Testing**: 80%+ code coverage with CI/CD
+5.  **Documentation**: Complete user and API docs
+6.  **Error Handling**: Clear, actionable error messages
+7.  **Installation**: One-command setup that always works
 
 ## Development Priorities
 
 ### Immediate (v1.0.9)
-1. ✅ Add comprehensive test suite
-2. Fix critical error handling gaps
-3. Document all public APIs
-4. Fix pytest environment issues and verify coverage
+1.  Fix pytest environment issues and verify coverage
+2.  Set up GitHub Actions CI/CD
 
 ### Short-term (v1.1.0)
-1. Complete cross-platform testing
-2. Set up CI/CD pipeline
-3. Publish to PyPI
+1.  Complete cross-platform testing
+2.  Publish to PyPI
 
 ### Medium-term (v1.2.0)
-1. Performance optimizations
-2. Enhanced configuration system
-3. Extended documentation
+1.  Performance optimizations
+2.  Enhanced configuration system
+3.  Extended documentation
 
 ## Non-Goals for v1.x
 
-- Complex UI features
-- Database backends
-- Advanced caching systems
-- Multi-user features
-- Custom provider SDKs
+-   Complex UI features
+-   Database backends
+-   Advanced caching systems
+-   Multi-user features
+-   Custom provider SDKs
 
 Keep the codebase lean, focused, and reliable. Every feature must contribute to stability and cross-platform compatibility.

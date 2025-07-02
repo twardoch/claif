@@ -208,8 +208,8 @@ all = [
 features = ['test']
 
 [tool.hatch.envs.test.scripts]
-test = 'python -m pytest -n auto {args:tests}'
-test-cov = 'python -m pytest -n auto --cov-report=term-missing --cov-config=pyproject.toml --cov=src/claif --cov=tests {args:tests}'
+test = 'pytest {args:tests}'
+test-cov = 'pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/claif --cov=tests {args:tests}'
 bench = 'python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only'
 bench-save = 'python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only --benchmark-json=benchmark/results.json'
 

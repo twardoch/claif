@@ -3,15 +3,8 @@
 ## Immediate Priority (v1.0.9)
 
 ### Testing & Reliability
-- [x] Add pytest-based test suite for core framework
-- [x] Test provider discovery mechanism
-- [x] Test auto-install functionality
-- [x] Test CLI argument parsing
-- [x] Test configuration loading
-- [x] Test error handling paths
-- [x] Mock external dependencies (CLI tools)
-- [x] Test async operations and timeout handling
-- [x] Achieve 80%+ code coverage (structure in place)
+- [ ] Fix pytest environment issues (xdist/coverage plugin conflicts)
+- [ ] Run full test suite to verify actual coverage
 
 ### Error Handling
 - [ ] Add context to all error messages
@@ -19,8 +12,6 @@
 - [ ] Document all public APIs
 
 ### Remaining Tasks
-- [ ] Fix pytest environment issues (xdist/coverage plugin conflicts)
-- [ ] Run full test suite to verify actual coverage
 - [ ] Set up GitHub Actions CI/CD
 
 ## Short-term Priority (v1.1.0)

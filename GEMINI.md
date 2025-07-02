@@ -1,5 +1,5 @@
 
-#Claif (Command-Line Artificial Intelligence Framework)
+# Claif (Command-Line Artificial Intelligence Framework)
 
 Claif (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
 
@@ -302,3 +302,5 @@ When completing any Claif development:
 Repeat this reflection, but stick to "minimal viable next version" philosophy.
 
 Remember:Claif's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.
+
+Use `uv pip` instead of `pip`. Use `uvx hatch test` instead of `python -m pytest`. 
