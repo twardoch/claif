@@ -65,7 +65,7 @@ I'll fix this by changing the import to be relative to the current package.
 ---
 
 ```diff
-  """CLAIF - Command Line Artificial Intelligence Framework."""
+  """Claif - Command Line Artificial Intelligence Framework."""
   
 - from src.claif.common import (
 + from .common import (

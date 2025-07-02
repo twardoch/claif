@@ -1,9 +1,47 @@
 # Changelog
 
-All notable changes to theClaif (Command-Line Artificial Intelligence Framework) project will be documented in this file.
+All notable changes to the Claif (Command-Line Artificial Intelligence Framework) project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.8] - 2025-07-02
+
+### Added
+- **Auto-Install Functionality (Issue #201)**: Added comprehensive auto-install support for all provider CLI tools
+- Added `InstallError` and `find_executable` to common module exports
+- Added `install_provider` and `uninstall_provider` functions
+- Added terminal opening utilities for post-install configuration prompts
+- Added auto-install exception handling in main client for missing CLI tools
+
+### Changed
+- **Provider Integration**: All three providers (claude, gemini, codex) now use real CLI tools instead of mock implementations
+- Updated codex provider to use real `@openai/codex` npm package instead of mock
+- Enhanced provider discovery to include auto-install capabilities
+- Improved error handling with automatic retry after successful CLI installation
+
+### Fixed
+- Fixed import paths from `src.claif.common.*` to relative imports (`.config`, `.errors`, etc.)
+- Fixed module import issues across all common modules and providers
+- Resolved `ImportError` issues preventing package from loading
+- Fixed provider initialization after auto-install
+
+### Technical Improvements
+- Streamlined import organization across all modules
+- Enhanced error hierarchy with more specific error types
+- Improved cross-platform compatibility for CLI tool detection
+- Added robust subprocess management for CLI tool installation
+
+## [1.0.7] - 2025-07-02
+
+### Added
+- Added comprehensive install functionality with bun bundling support
+- Added npm package installation utilities
+- Added cross-platform CLI tool detection
+
+### Changed
+- Enhanced common module with install utilities and error types
+- Improved provider package integration architecture
 
 ## [1.0.6] - 2025-07-01
 

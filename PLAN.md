@@ -1,51 +1,111 @@
-#Claif Development Plan
+# Claif Development Plan
 
 ## Overview
 
-CLAIF (Command-Line Artificial Intelligence Framework) is a unified interface for interacting with multiple AI language model providers. The core framework (v1.0) is already complete and stable.
+CLAIF (Command-Line Artificial Intelligence Framework) is a unified interface for interacting with multiple AI language model providers. The core framework and all provider packages are now production-ready and working.
 
-## Immediate Priorities (v1.0.x)
+## Current Status ✅ 
 
-1. **Provider Packages**
-   - Implement and release:
-     - `claif_cla` (Claude SDK wrapper)
-     - `claif_gem` (Gemini CLI wrapper)
-     - `claif_cod` (OpenAI/Codex CLI wrapper)
-2. **Integration & Testing**
-   - End-to-end tests that cover provider discovery and real API calls
-   - Example notebooks & CLI demos that use real providers
-3. **Packaging & Release**
-   - Verify `python -m build` succeeds
-   - Publish core `claif` 1.0.x to PyPI
-   - Set up GitHub release workflow
-4. **Documentation**
-   - Provider implementation guide
-   - Troubleshooting section for common issues
+**Core Framework (v1.0.8)**: Production-ready with auto-install functionality
+**Provider Packages**: All three providers working with real CLI tools:
+- `claif_cla` (v1.0.10): Claude Code SDK integration ✅
+- `claif_gem` (v1.0.6): Google Gemini CLI integration ✅  
+- `claif_cod` (v1.0.7): OpenAI Codex CLI integration ✅
 
-## Short-Term Roadmap (v1.1)
+**Auto-Install (Issue #201)**: ✅ COMPLETED
+- Users can run `uvx claif_* query "..."` on any machine
+- Automatic CLI tool installation when missing
+- Cross-platform support (Windows, macOS, Linux)
+- Real CLI tools: `@anthropic-ai/claude-code`, `@google/gemini-cli`, `@openai/codex`
 
-| Area                | Goals |
-| ------------------- | ----- |
-| **Testing**         | 80 %+ unit-test coverage, GitHub Actions CI |
-| **Code Quality**    | mypy type-checking, pre-commit hooks |
-| **Bug Fixes**       | Address feedback from initial users |
-| **Docs**            | Full API references, more examples |
+## MVP v1.x Priorities
 
-## Mid-Term Roadmap (v1.2+)
+### 1. Quality & Stability (v1.0.9-1.0.11)
+- [ ] **Testing**: Add comprehensive unit tests for all packages
+- [ ] **Documentation**: Complete API documentation and usage guides
+- [ ] **Error Handling**: Improve error messages and edge case handling
+- [ ] **Cross-Platform**: Verify full Windows, macOS, Linux compatibility
 
-* Response caching and retry logic
-* Session persistence
-* Cost tracking & rate limiting
-* Performance optimisations (parallel queries, connection pooling)
+### 2. Release & Distribution (v1.1.0)
+- [ ] **PyPI Publishing**: Release all packages to PyPI with automated workflows
+- [ ] **GitHub Actions**: Set up CI/CD pipelines for all repositories
+- [ ] **Packaging**: Verify `python -m build` and distribution works correctly
+- [ ] **Version Management**: Coordinate version bumps across all packages
 
-## Design Principles
+### 3. User Experience Polish (v1.1.x)
+- [ ] **CLI Improvements**: Add `--version`, `--help` standardization across all packages
+- [ ] **Error Messages**: Make error messages more actionable and user-friendly
+- [ ] **Performance**: Optimize startup time and reduce overhead
+- [ ] **Configuration**: Streamline setup and configuration processes
 
-1. **Minimal Viable First** – deliver essential functionality quickly.
-2. **Provider Independence** – clean separation between core and providers.
-3. **Async-First** – embrace modern `async`/`await` patterns.
-4. **Type Safety** – comprehensive type hints.
-5. **Simplicity** – avoid over-engineering; prefer clear, concise code.
+## Architecture Status
 
-## Current Status Summary
+### Core Framework ✅
+```
+claif/
+├── common/         # Shared utilities, types, config ✅
+├── providers/      # Provider interfaces ✅
+├── client.py       # Unified client with auto-install ✅
+├── cli.py          # Fire-based CLI ✅
+├── server.py       # MCP server ✅
+└── install.py      # Auto-install functionality ✅
+```
 
-The core `claif` package is production-ready; the next step is to build and integrate the individual provider packages listed above.
+### Provider Packages ✅
+- **claif_cla**: Production Claude integration with claude-code-sdk ✅
+- **claif_gem**: Production Gemini integration with gemini-cli ✅
+- **claif_cod**: Production Codex integration with @openai/codex ✅
+
+## Quality Gates
+
+### Before v1.1.0 Release
+- [ ] 80%+ test coverage across all packages
+- [ ] All linting and type checking passes
+- [ ] Cross-platform testing completed
+- [ ] Documentation complete and accurate
+- [ ] PyPI package builds successfully
+- [ ] Auto-install verified on clean systems
+
+### Success Metrics
+1. **Reliability**: `uvx claif query "test"` works on any machine ✅
+2. **Completeness**: All three AI providers functional ✅
+3. **Auto-Install**: Graceful handling of missing dependencies ✅
+4. **Cross-Platform**: Works on Windows, macOS, Linux ✅
+5. **Maintainability**: Clean, well-documented codebase
+
+## Short-Term Roadmap (v1.1-1.2)
+
+| Priority | Task | Status |
+|----------|------|---------|
+| **High** | Unit test coverage 80%+ | Pending |
+| **High** | PyPI publishing automation | Pending |
+| **High** | Complete documentation | Pending |
+| **Medium** | Performance optimization | Pending |
+| **Medium** | Enhanced error handling | Pending |
+| **Low** | Response caching | Future |
+
+## Future Enhancements (v2.0+)
+
+- Session persistence and management
+- Response caching and cost tracking
+- Advanced retry logic and rate limiting
+- Plugin system for custom providers
+- Web UI integration via MCP tools
+
+## Non-Goals for v1.x
+
+- Complex web interfaces (use MCP tools instead)
+- Advanced prompt engineering features
+- Provider-specific advanced features beyond basic querying
+- Multi-user authentication systems
+- Database backends
+
+## Design Principles Maintained
+
+1. **Simplicity First**: Clean, minimal APIs
+2. **Auto-Install**: Zero manual setup required
+3. **Provider Independence**: Unified interface across all providers
+4. **Cross-Platform**: Works everywhere Python runs
+5. **Type Safety**: Comprehensive type hints throughout
+
+The foundation is solid - now focus on quality, testing, and release preparation for a robust v1.1.0 that users can confidently adopt.

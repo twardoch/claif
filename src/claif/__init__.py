@@ -1,4 +1,4 @@
-"""CLAIF - Command Line Artificial Intelligence Framework."""
+"""Claif - Command Line Artificial Intelligence Framework."""
 
 from claif.common import (
     ClaifError,

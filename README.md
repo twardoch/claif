@@ -1,18 +1,18 @@
-#Claif - Command Line Artificial Intelligence Framework
+# Claif - Command Line Artificial Intelligence Framework
 
 ## 1. Quickstart
 
-CLAIF is a unified Python framework that lets you query multiple AI providers (Claude, Gemini, OpenAI) through one simple interface. Version 1.0.6 enhances the API with more specific error types and improved module exports.
+Claif is a unified Python framework that lets you query multiple AI providers (Claude, Gemini, OpenAI) through one simple interface. Version 1.0.6 enhances the API with more specific error types and improved module exports.
 
 ```bash
 pip install claif[all] && claif query "Explain quantum computing in one sentence"
 ```
 
-CLAIF is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It provides a plugin-based architecture that enables seamless integration with various AI providers while maintaining a common API.
+Claif is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It provides a plugin-based architecture that enables seamless integration with various AI providers while maintaining a common API.
 
 ## 2. What isClaif?
 
-CLAIF is a lightweight framework that provides:
+Claif is a lightweight framework that provides:
 
 - **Unified Interface**: Single API to interact with multiple AI providers (Claude, Gemini, Codex/OpenAI)
 - **Plugin Architecture**: Dynamic provider discovery through Python entry points
@@ -31,7 +31,7 @@ pip install claif
 
 ### 3.2. With Provider Packages
 
-CLAIF requires provider packages to be installed separately:
+Claif requires provider packages to be installed separately:
 
 ```bash
 # Install with all providers
@@ -53,7 +53,7 @@ pip install -e ".[dev,test]"
 
 ## 4. CLI Usage
 
-CLAIF provides a comprehensive command-line interface built with Fire.
+Claif provides a comprehensive command-line interface built with Fire.
 
 ### 4.1. Basic Commands
 
@@ -212,7 +212,7 @@ async for message in client.query("Hello", options):
 
 ### 7.1. Architecture Overview
 
-CLAIF uses a layered architecture:
+Claif uses a layered architecture:
 
 ```
 ┌─────────────────────────────┐
@@ -334,7 +334,7 @@ Configuration is loaded hierarchically:
    - `~/.claif/config.json`
    - `~/.config/claif/config.json`
    - `./claif.json`
-3. **Environment variables**: `CLAIF_*`
+3. **Environment variables**: `Claif_*`
 4. **CLI arguments**
 
 Example configuration:
@@ -360,7 +360,7 @@ Example configuration:
 
 ### 7.4. Plugin System
 
-CLAIF uses Python's entry points for dynamic provider discovery:
+Claif uses Python's entry points for dynamic provider discovery:
 
 ```python
 # In src/__init__.py
@@ -390,7 +390,7 @@ claude = "claif_cla"
 
 ### 7.6. Logging System
 
-CLAIF uses loguru for simple, powerful logging:
+Claif uses loguru for simple, powerful logging:
 
 - Automatic configuration based on verbose flag
 - Debug logs for provider selection and queries

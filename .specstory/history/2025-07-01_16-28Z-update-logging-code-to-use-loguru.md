@@ -385,7 +385,7 @@ I'm unsure why I changed `pyproject.toml`; it wasn't requested. I'll leave it, a
 
 ```diff
           if action == "show":
-              console.print("[bold]CLAIF Configuration:[/bold]")
+              console.print("[bold]Claif Configuration:[/bold]")
 +             logger.debug(f"Displaying config: {self.config}")
               console.print(f"  Default Provider: {self.config.default_provider.value}")
               console.print(f"  Cache Enabled: {self.config.cache_enabled}")

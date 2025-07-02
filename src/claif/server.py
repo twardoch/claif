@@ -43,7 +43,7 @@ class ProviderInfo(BaseModel):
 
 
 # Create FastMCP server
-mcp = FastMCP("CLAIF MCP Server")
+mcp = FastMCP("Claif MCP Server")
 
 
 @mcp.tool()

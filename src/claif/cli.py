@@ -413,7 +413,7 @@ class ClaifCLI:
             **kwargs: Configuration values for 'set' action
         """
         if action == "show":
-            console.print("[bold]CLAIF Configuration:[/bold]")
+            console.print("[bold]Claif Configuration:[/bold]")
             logger.debug(f"Displaying config: {self.config}")
             console.print(f"  Default Provider: {self.config.default_provider.value}")
             console.print(f"  Cache Enabled: {self.config.cache_enabled}")
@@ -658,7 +658,7 @@ class ClaifCLI:
         """Show installation status for allClaif providers."""
         from claif.install import get_install_location
 
-        console.print("[bold]CLAIF Provider Status[/bold]\n")
+        console.print("[bold]Claif Provider Status[/bold]\n")
 
         # Show install directory
         install_dir = get_install_location()
