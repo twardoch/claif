@@ -41,6 +41,7 @@ dependencies = [
     'importlib-metadata>=8.7.0',
     'importlib-resources>=6.5.2',
     "typing-extensions>=4.0.0; python_version < '3.11'",
+    'tenacity>=9.0.0',
 ]
 
 [[project.authors]]
@@ -92,6 +93,7 @@ all = [
     'claif_cla>=1.0.0',
     'claif_gem>=1.0.0',
     'claif_cod>=1.0.0',
+    'tenacity>=9.0.0',
 ]
 
 [project.scripts]

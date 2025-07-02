@@ -55,6 +55,8 @@ class ClaifCLI:
         output_format: str = "text",
         show_metrics: bool = False,
         cache: bool = True,
+        no_retry: bool = False,
+        rotate_providers: bool = False,
     ) -> None:
         """Execute a query to specified provider.
 
@@ -69,6 +71,8 @@ class ClaifCLI:
             output_format: Output format (text, json, markdown)
             show_metrics: Show response metrics
             cache: Enable response caching
+            no_retry: Disable retry logic (single attempt only)
+            rotate_providers: Enable provider rotation on failures
         """
         # Parse provider
         provider_enum = None
@@ -90,13 +94,18 @@ class ClaifCLI:
             output_format=output_format,
             cache=cache,
             verbose=self.config.verbose,
+            retry_count=0 if no_retry else 3,
+            retry_delay=1.0,
         )
 
         start_time = time.time()
 
         try:
-            # Run async query
-            messages = asyncio.run(self._query_async(prompt, options))
+            # Run async query with optional provider rotation
+            if rotate_providers:
+                messages = asyncio.run(self._query_async_with_rotation(prompt, options))
+            else:
+                messages = asyncio.run(self._query_async(prompt, options))
 
             # Format and display response
             for message in messages:
@@ -123,6 +132,13 @@ class ClaifCLI:
         """Execute async query and collect messages."""
         messages = []
         async for message in query(prompt, options):
+            messages.append(message)
+        return messages
+
+    async def _query_async_with_rotation(self, prompt: str, options: ClaifOptions) -> list:
+        """Execute async query with provider rotation and collect messages."""
+        messages = []
+        async for message in self.client.query_with_rotation(prompt, options):
             messages.append(message)
         return messages
 

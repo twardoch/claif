@@ -133,8 +133,7 @@ def get_claif_data_dir() -> Path:
     """Get the claif data directory path."""
     from platformdirs import user_data_dir
 
-    claif_data_dir = Path(user_data_dir(APP_NAME, "claif"))
-    return claif_data_dir
+    return Path(user_data_dir(APP_NAME, "claif"))
 
 
 def get_claif_bin_path() -> Path:

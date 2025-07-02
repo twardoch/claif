@@ -3,7 +3,7 @@
 import random
 from collections.abc import AsyncIterator
 
-from claif.common import ClaifOptions, Message, Provider, ProviderError, logger
+from claif.common import ClaifOptions, ClaifTimeoutError, Message, Provider, ProviderError, logger
 from claif.providers import ClaudeProvider, CodexProvider, GeminiProvider
 
 
@@ -178,6 +178,59 @@ class ClaifClient:
     def list_providers(self) -> list[Provider]:
         """List available providers."""
         return list(self.providers.keys())
+
+    async def query_with_rotation(
+        self,
+        prompt: str,
+        options: ClaifOptions | None = None,
+    ) -> AsyncIterator[Message]:
+        """Query with automatic provider rotation on failures.
+
+        Tries the specified provider first, then rotates through others
+        if it fails after retry attempts.
+        """
+        if options is None:
+            options = ClaifOptions()
+
+        # Start with the specified provider or default
+        primary_provider = options.provider or Provider.CLAUDE
+        providers_to_try = [primary_provider]
+
+        # Add other providers for rotation
+        for provider in self.providers:
+            if provider != primary_provider:
+                providers_to_try.append(provider)
+
+        last_error = None
+        providers_tried = []
+
+        for provider in providers_to_try:
+            providers_tried.append(provider.value)
+
+            # Update options to use current provider
+            current_options = ClaifOptions(**options.__dict__)
+            current_options.provider = provider
+
+            logger.info(f"Trying provider: {provider.value}")
+
+            try:
+                async for message in self.query(prompt, current_options):
+                    yield message
+                return  # Success, exit
+
+            except (ProviderError, ClaifTimeoutError, Exception) as e:
+                last_error = e
+                logger.warning(f"Provider {provider.value} failed after retries: {e}. Rotating to next provider...")
+
+                # Check if this was the last provider
+                if provider == providers_to_try[-1]:
+                    logger.error(f"All providers failed. Tried: {', '.join(providers_tried)}")
+                    msg = "all"
+                    raise ProviderError(
+                        msg,
+                        "All providers failed after retry attempts",
+                        {"providers_tried": providers_tried, "last_error": str(last_error)},
+                    ) from last_error
 
 
 # Module-level client instance
