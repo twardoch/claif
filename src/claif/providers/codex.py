@@ -1,4 +1,4 @@
-"""Codex provider forClaif."""
+"""Codex provider for Claif."""
 
 from collections.abc import AsyncIterator
 
@@ -8,7 +8,7 @@ from claif.common import ClaifOptions, Message, logger
 
 
 class CodexProvider:
-    """Codex provider forClaif."""
+    """Codex provider for Claif."""
 
     def __init__(self):
         self.name = "codex"

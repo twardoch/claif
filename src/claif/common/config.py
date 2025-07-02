@@ -1,4 +1,4 @@
-"""Configuration management forClaif framework."""
+"""Configuration management for Claif framework."""
 
 import contextlib
 import json
@@ -7,8 +7,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .errors import ConfigurationError
-from .types import Provider
+from src.claif.common.errors import ConfigurationError
+from src.claif.common.types import Provider
 
 
 @dataclass
@@ -28,7 +28,7 @@ class ProviderConfig:
 
 @dataclass
 class Config:
-    """Main configuration forClaif."""
+    """Main configuration for Claif."""
 
     default_provider: Provider = Provider.CLAUDE
     providers: dict[str, ProviderConfig] = None

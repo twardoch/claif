@@ -1,4 +1,4 @@
-"""Fire-based CLI for unifiedClaif wrapper."""
+"""Fire-based CLI for unified Claif wrapper."""
 
 import asyncio
 import os
@@ -32,7 +32,7 @@ console = Console()
 
 
 class ClaifCLI:
-    """UnifiedClaif CLI with Fire interface."""
+    """Unified Claif CLI with Fire interface."""
 
     def __init__(self, config_file: str | None = None, verbose: bool = False):
         """Initialize CLI with optional config file."""
@@ -43,7 +43,7 @@ class ClaifCLI:
         if verbose:
             self.config.verbose = True
         self.client = _client
-        logger.debug("InitializedClaif CLI")
+        logger.debug("Initialized Claif CLI")
 
     def query(
         self,
@@ -391,7 +391,7 @@ class ClaifCLI:
             port: Port to bind to
             reload: Enable auto-reload for development
         """
-        console.print("[bold]StartingClaif MCP Server[/bold]")
+        console.print("[bold]Starting Claif MCP Server[/bold]")
         console.print(f"Host: {host}")
         console.print(f"Port: {port}")
         console.print(f"Reload: {reload}")
@@ -406,7 +406,7 @@ class ClaifCLI:
             sys.exit(1)
 
     def config(self, action: str = "show", **kwargs) -> None:
-        """ManageClaif configuration.
+        """Manage Claif configuration.
 
         Args:
             action: Action to perform (show, set, save)
@@ -498,7 +498,7 @@ class ClaifCLI:
             console.print(f"[yellow]Interactive mode not available for {provider}[/yellow]")
 
     def install(self, providers: str = "all") -> None:
-        """InstallClaif provider packages and bundle them.
+        """Install Claif provider packages and bundle them.
 
         Args:
             providers: Comma-separated list of providers or 'all' (default)
@@ -580,7 +580,7 @@ class ClaifCLI:
                 console.print("\n[green]🎉 All providers installed successfully![/green]")
 
     def uninstall(self, providers: str = "all") -> None:
-        """UninstallClaif provider executables.
+        """Uninstall Claif provider executables.
 
         Args:
             providers: Comma-separated list of providers or 'all' (default)
@@ -655,7 +655,7 @@ class ClaifCLI:
                 console.print("\n[green]🗑️ Providers uninstalled successfully![/green]")
 
     def status(self) -> None:
-        """Show installation status for allClaif providers."""
+        """Show installation status for all Claif providers."""
         from claif.install import get_install_location
 
         console.print("[bold]Claif Provider Status[/bold]\n")

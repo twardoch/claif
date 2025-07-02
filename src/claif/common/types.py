@@ -1,4 +1,4 @@
-"""Common type definitions forClaif framework."""
+"""Common type definitions for Claif framework."""
 
 from dataclasses import dataclass
 from enum import Enum
@@ -75,7 +75,7 @@ class Message:
 
 @dataclass
 class ClaifOptions:
-    """Common options forClaif queries."""
+    """Common options for Claif queries."""
 
     provider: Provider | None = None
     model: str | None = None
@@ -106,7 +106,7 @@ class ResponseMetrics:
 
 @dataclass
 class ClaifResponse:
-    """Response from aClaif query."""
+    """Response from a Claif query."""
 
     messages: list[Message]
     metrics: ResponseMetrics | None = None

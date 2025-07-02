@@ -1,4 +1,4 @@
-"""MCP server implementation forClaif."""
+"""MCP server implementation for Claif."""
 
 from typing import Any
 
@@ -48,7 +48,7 @@ mcp = FastMCP("Claif MCP Server")
 
 @mcp.tool()
 async def claif_query(request: QueryRequest) -> QueryResponse:
-    """Query a specific LLM provider throughClaif.
+    """Query a specific LLM provider through Claif.
 
     Args:
         request: Query request with prompt and options
@@ -107,7 +107,7 @@ async def claif_query(request: QueryRequest) -> QueryResponse:
 
 @mcp.tool()
 async def claif_query_random(request: QueryRequest) -> QueryResponse:
-    """Query a random LLM provider throughClaif.
+    """Query a random LLM provider through Claif.
 
     Args:
         request: Query request with prompt and options
@@ -159,7 +159,7 @@ async def claif_query_random(request: QueryRequest) -> QueryResponse:
 
 @mcp.tool()
 async def claif_query_all(request: QueryRequest) -> dict[str, QueryResponse]:
-    """Query all LLM providers in parallel throughClaif.
+    """Query all LLM providers in parallel through Claif.
 
     Args:
         request: Query request with prompt and options
@@ -212,7 +212,7 @@ async def claif_query_all(request: QueryRequest) -> dict[str, QueryResponse]:
 
 @mcp.tool()
 async def claif_list_providers() -> list[ProviderInfo]:
-    """List all available LLM providers inClaif.
+    """List all available LLM providers in Claif.
 
     Returns:
         List of provider information
@@ -234,7 +234,7 @@ async def claif_list_providers() -> list[ProviderInfo]:
 
 @mcp.tool()
 async def claif_health_check(provider: str | None = None) -> dict[str, bool]:
-    """Check health ofClaif providers.
+    """Check health of Claif providers.
 
     Args:
         provider: Specific provider to check, or None for all

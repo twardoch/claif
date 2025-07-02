@@ -10,7 +10,7 @@ pip install claif[all] && claif query "Explain quantum computing in one sentence
 
 Claif is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It provides a plugin-based architecture that enables seamless integration with various AI providers while maintaining a common API.
 
-## 2. What isClaif?
+## 2. What is Claif?
 
 Claif is a lightweight framework that provides:
 
@@ -184,7 +184,7 @@ async for message in client.query("Hello", options):
     print(message.content)
 ```
 
-## 6. WhyClaif is Useful
+## 6. Why Claif is Useful
 
 ### 6.1. **Provider Independence**
 - Switch between AI providers without changing your code

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # this_file: claif/src/claif/common/install.py
-"""Shared installation utilities forClaif packages."""
+"""Shared installation utilities for Claif packages."""
 
 import os
 import platform

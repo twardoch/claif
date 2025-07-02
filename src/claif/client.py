@@ -1,4 +1,4 @@
-"""Client implementation forClaif."""
+"""Client implementation for Claif."""
 
 import random
 from collections.abc import AsyncIterator

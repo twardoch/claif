@@ -1,10 +1,10 @@
-"""Common error types forClaif framework."""
+"""Common error types for Claif framework."""
 
 from typing import Any
 
 
 class ClaifError(Exception):
-    """Base exception forClaif framework."""
+    """Base exception for Claif framework."""
 
     def __init__(self, message: str, details: dict[str, Any] | None = None):
         super().__init__(message)

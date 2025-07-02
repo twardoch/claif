@@ -1,4 +1,4 @@
-"""Gemini provider forClaif."""
+"""Gemini provider for Claif."""
 
 from collections.abc import AsyncIterator
 
@@ -8,7 +8,7 @@ from claif.common import ClaifOptions, Message, logger
 
 
 class GeminiProvider:
-    """Gemini provider forClaif."""
+    """Gemini provider for Claif."""
 
     def __init__(self):
         self.name = "gemini"

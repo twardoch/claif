@@ -1,4 +1,4 @@
-"""Utility functions forClaif framework."""
+"""Utility functions for Claif framework."""
 
 import json
 import os
@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from .types import ContentBlock, Message, ResponseMetrics, TextBlock
+from src.claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
 
 
 def format_response(message: Message, format: str = "text", syntax_highlighting: bool = True) -> str:
@@ -136,10 +136,10 @@ def get_claif_bin_path() -> Path:
 
 
 def inject_claif_bin_to_path() -> dict:
-    """InjectClaif bin directory to PATH.
+    """Inject Claif bin directory to PATH.
 
     Returns:
-        Environment withClaif bin in PATH
+        Environment with Claif bin in PATH
     """
     env = os.environ.copy()
     claif_bin = get_install_location()
@@ -154,7 +154,7 @@ def inject_claif_bin_to_path() -> dict:
 
 
 def get_install_location() -> Path:
-    """Get the install location forClaif tools.
+    """Get the install location for Claif tools.
 
     Returns:
         Path to install directory
