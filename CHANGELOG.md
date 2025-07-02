@@ -5,6 +5,17 @@ All notable changes to the Claif (Command-Line Artificial Intelligence Framework
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-01-02
+
+### Added
+- **Core Framework Support for Retry Logic**: Added `no_retry` field to `ClaifOptions`
+  - Enables providers to respect --no_retry flag from CLI
+  - Provides unified retry configuration across all providers
+
+### Changed
+- Updated `ClaifOptions` dataclass to include retry configuration support
+- All providers now have consistent retry behavior configuration
+
 ## [1.0.9] - 2025-01-02
 
 ### Added
