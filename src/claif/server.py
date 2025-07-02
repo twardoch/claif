@@ -1,13 +1,11 @@
-"""MCP server implementation for CLAIF."""
+"""MCP server implementation forClaif."""
 
-import json
-from functools import lru_cache
 from typing import Any
 
 import anyio
+from fastmcp import FastMCP
 from mcp.server import Server
 from pydantic import BaseModel
-from fastmcp import FastMCP
 
 from claif.client import query, query_all, query_random
 from claif.common import ClaifOptions, Config, Provider, logger
@@ -50,7 +48,7 @@ mcp = FastMCP("CLAIF MCP Server")
 
 @mcp.tool()
 async def claif_query(request: QueryRequest) -> QueryResponse:
-    """Query a specific LLM provider through CLAIF.
+    """Query a specific LLM provider throughClaif.
 
     Args:
         request: Query request with prompt and options
@@ -109,7 +107,7 @@ async def claif_query(request: QueryRequest) -> QueryResponse:
 
 @mcp.tool()
 async def claif_query_random(request: QueryRequest) -> QueryResponse:
-    """Query a random LLM provider through CLAIF.
+    """Query a random LLM provider throughClaif.
 
     Args:
         request: Query request with prompt and options
@@ -161,7 +159,7 @@ async def claif_query_random(request: QueryRequest) -> QueryResponse:
 
 @mcp.tool()
 async def claif_query_all(request: QueryRequest) -> dict[str, QueryResponse]:
-    """Query all LLM providers in parallel through CLAIF.
+    """Query all LLM providers in parallel throughClaif.
 
     Args:
         request: Query request with prompt and options
@@ -214,7 +212,7 @@ async def claif_query_all(request: QueryRequest) -> dict[str, QueryResponse]:
 
 @mcp.tool()
 async def claif_list_providers() -> list[ProviderInfo]:
-    """List all available LLM providers in CLAIF.
+    """List all available LLM providers inClaif.
 
     Returns:
         List of provider information
@@ -236,7 +234,7 @@ async def claif_list_providers() -> list[ProviderInfo]:
 
 @mcp.tool()
 async def claif_health_check(provider: str | None = None) -> dict[str, bool]:
-    """Check health of CLAIF providers.
+    """Check health ofClaif providers.
 
     Args:
         provider: Specific provider to check, or None for all
@@ -287,7 +285,7 @@ def start_mcp_server(
         host: Host to bind to
         port: Port to bind to
         reload: Enable auto-reload
-        config: CLAIF configuration
+        config:Claif configuration
     """
     # Store config globally if provided
     if config:

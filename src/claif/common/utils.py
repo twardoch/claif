@@ -1,12 +1,11 @@
-"""Utility functions for CLAIF framework."""
+"""Utility functions forClaif framework."""
 
 import json
 import os
+import platform
+import subprocess
 import time
-from collections.abc import AsyncIterator
-from datetime import datetime
-from functools import wraps
-from io import StringIO
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -136,22 +135,118 @@ def get_claif_bin_path() -> Path:
     return claif_data_dir / "bin"
 
 
-def inject_claif_bin_to_path() -> dict[str, str]:
-    """Inject claif bin directory into PATH environment variable.
+def inject_claif_bin_to_path() -> dict:
+    """InjectClaif bin directory to PATH.
 
     Returns:
-        Environment dict with claif bin directory prepended to PATH
+        Environment withClaif bin in PATH
     """
     env = os.environ.copy()
-    claif_bin = get_claif_bin_path()
+    claif_bin = get_install_location()
 
-    if claif_bin.exists():
-        current_path = env.get("PATH", "")
-        claif_bin_str = str(claif_bin)
+    path_sep = ";" if os.name == "nt" else ":"
+    current_path = env.get("PATH", "")
 
-        # Only add if not already in PATH
-        if claif_bin_str not in current_path.split(os.pathsep):
-            env["PATH"] = f"{claif_bin_str}{os.pathsep}{current_path}"
-            logger.debug(f"Injected claif bin directory into PATH: {claif_bin}")
+    if str(claif_bin) not in current_path:
+        env["PATH"] = f"{claif_bin}{path_sep}{current_path}"
 
     return env
+
+
+def get_install_location() -> Path:
+    """Get the install location forClaif tools.
+
+    Returns:
+        Path to install directory
+    """
+    if os.name == "nt":
+        # Windows: use %LOCALAPPDATA%\claif\bin
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        return base / "claif" / "bin"
+    # Unix-like: use ~/.local/bin/claif
+    return Path.home() / ".local" / "bin" / "claif"
+
+
+def open_commands_in_terminals(commands: Sequence[str]) -> None:
+    """Open each command in a new terminal window.
+
+    Uses the simplest built-in terminal for each platform:
+    - macOS: Terminal.app
+    - Windows: cmd.exe
+    - Linux: gnome-terminal or x-terminal-emulator
+
+    Args:
+        commands: List of shell commands to run in separate terminals
+
+    Raises:
+        NotImplementedError: If running on an unsupported operating system
+    """
+    system = platform.system()
+    logger.debug(f"Opening {len(commands)} commands on {system}")
+
+    for cmd in commands:
+        logger.debug(f"Opening terminal for command: {cmd}")
+        try:
+            match system:
+                case "Darwin":
+                    # macOS Terminal.app
+                    subprocess.Popen(
+                        [
+                            "osascript",
+                            "-e",
+                            f'tell application "Terminal" to do script "{cmd}"',
+                        ]
+                    )
+                case "Windows":
+                    # Windows CMD
+                    subprocess.Popen(["cmd", "/c", "start", "cmd", "/k", cmd], shell=True)
+                case "Linux":
+                    # Try common Linux terminals
+                    terminals = [
+                        ["gnome-terminal", "--", "bash", "-c", f"{cmd}; exec bash"],
+                        ["x-terminal-emulator", "-e", f"bash -c '{cmd}; exec bash'"],
+                        ["xterm", "-e", f"bash -c '{cmd}; exec bash'"],
+                    ]
+
+                    success = False
+                    for terminal_cmd in terminals:
+                        try:
+                            subprocess.Popen(terminal_cmd)
+                            success = True
+                            break
+                        except FileNotFoundError:
+                            continue
+
+                    if not success:
+                        logger.warning("No suitable terminal found on Linux")
+                        msg = "No suitable terminal emulator found"
+                        raise NotImplementedError(msg)
+                case _:
+                    msg = f"Unsupported OS: {system}"
+                    raise NotImplementedError(msg)
+        except Exception as e:
+            logger.warning(f"Failed to open terminal for '{cmd}': {e}")
+
+
+def prompt_tool_configuration(tool_name: str, config_commands: list[str]) -> None:
+    """Prompt user to configure a tool and optionally open terminals.
+
+    Args:
+        tool_name: Name of the tool (e.g., 'Claude', 'Gemini')
+        config_commands: List of configuration commands to show/run
+    """
+
+    if config_commands:
+        for _cmd in config_commands:
+            pass
+
+        try:
+            response = input(f"\nOpen terminal(s) to configure {tool_name}? (y/N): ")
+            if response.lower().startswith("y"):
+                open_commands_in_terminals(config_commands)
+            else:
+                pass
+        except (KeyboardInterrupt, EOFError):
+            pass
+    else:
+        pass

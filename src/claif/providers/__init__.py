@@ -1,4 +1,4 @@
-"""Provider implementations for CLAIF."""
+"""Provider implementations forClaif."""
 
 from .claude import ClaudeProvider
 from .codex import CodexProvider

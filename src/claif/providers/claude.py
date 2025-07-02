@@ -1,4 +1,4 @@
-"""Claude provider for CLAIF."""
+"""Claude provider forClaif."""
 
 from collections.abc import AsyncIterator
 
@@ -8,7 +8,7 @@ from claif.common import ClaifOptions, Message, logger
 
 
 class ClaudeProvider:
-    """Claude provider for CLAIF."""
+    """Claude provider forClaif."""
 
     def __init__(self):
         self.name = "claude"

@@ -1,5 +1,5 @@
 
-# CLAIF (Command-Line Artificial Intelligence Framework)
+#Claif (Command-Line Artificial Intelligence Framework)
 
 CLAIF (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
 
@@ -8,9 +8,9 @@ The project consists of four Github repositories and Python packages:
 - [`claif_cla`](https://github.com/twardoch/claif_cla/): CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
 - [`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
 - [`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
-- [`claif`](https://github.com/twardoch/claif/): The top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+- [`claif`](https://github.com/twardoch/claif/): The top-levelClaif framework that provides the main building blocks, including the client, server, and provider integrations.
 
-This document provides comprehensive development guidelines for all packages in the CLAIF ecosystem.
+This document provides comprehensive development guidelines for all packages in theClaif ecosystem.
 
 ## Current Status (Updated 2025-01-01)
 
@@ -36,9 +36,9 @@ This document provides comprehensive development guidelines for all packages in 
 
 ## 1. This very project overview
 
-### 1.1. `claif`: CLAIF core framework
+### 1.1. `claif`:Claif core framework
 
-[`claif`](https://github.com/twardoch/claif/) is the top-level CLAIF framework that provides the main building blocks, including the client, server, and provider integrations.
+[`claif`](https://github.com/twardoch/claif/) is the top-levelClaif framework that provides the main building blocks, including the client, server, and provider integrations.
 
 **Key Responsibilities:**
 
@@ -56,9 +56,9 @@ This document provides comprehensive development guidelines for all packages in 
 - Keep dependencies minimal
 - Prioritize extensibility
 
-## 2. Other projects in the CLAIF ecosystem
+## 2. Other projects in theClaif ecosystem
 
-### 2.1. `claif_cla`: CLAIF provider for the Anthropic Claude Code CLI toolkit
+### 2.1. `claif_cla`:Claif provider for the Anthropic Claude Code CLI toolkit
 
 [`claif_cla`](https://github.com/twardoch/claif_cla/) is a CLI and Python package that wraps the [`claude_code_sdk`](https://github.com/anthropics/claude-code-sdk-python) package for interacting with Anthropic’s [Claude Code CLI](https://github.com/anthropics/claude-code) agentic CLI toolkit based on their Claude models.
 
@@ -77,7 +77,7 @@ This document provides comprehensive development guidelines for all packages in 
 - Improve approval strategies
 - Optimize caching logic
 
-### 2.2. `claif_cod`: CLAIF provider for the OpenAI Codex CLI toolkit
+### 2.2. `claif_cod`:Claif provider for the OpenAI Codex CLI toolkit
 
 [`claif_cod`](https://github.com/twardoch/claif_cod/): CLI and Python package for interacting with OpenAI’s new [Codex CLI](https://github.com/openai/codex) agentic CLI toolkit based on OpenAI’s models.
 
@@ -95,7 +95,7 @@ This document provides comprehensive development guidelines for all packages in 
 - Project context awareness
 - Action mode refinement
 
-### 2.3. `claif_gem`: CLAIF provider for the Google Gemini CLI toolkit
+### 2.3. `claif_gem`:Claif provider for the Google Gemini CLI toolkit
 
 [`claif_gem`](https://github.com/twardoch/claif_gem/): CLI and Python package for that wraps the [Gemini CLI](https://github.com/google-gemini/gemini-cli/) agentic CLI toolkit based on Google’s Gemini models.
 
@@ -113,11 +113,11 @@ This document provides comprehensive development guidelines for all packages in 
 - Timeout and error recovery
 - Cross-platform compatibility
 
-## 3. Working Principles for CLAIF Development
+## 3. Working Principles forClaif Development
 
 ### 3.1. Core Development Principles
 
-When developing for CLAIF (in any sub-project):
+When developing forClaif (in any sub-project):
 
 - **Iterate gradually**, avoiding major breaking changes to the plugin interface
 - **Minimize user confirmations** while maintaining safety, especially for code operations
@@ -156,12 +156,12 @@ In each source file, maintain the `this_file` record:
 
 ```python
 # this_file: src/claif_cla/cli.py
-"""CLI interface for the CLAIF Claude provider"""
+"""CLI interface for theClaif Claude provider"""
 ```
 
 ### 3.4. Python-Specific Guidelines
 
-For all CLAIF Python code:
+For allClaif Python code:
 
 - **PEP 8**: Consistent formatting with 120-char line limit (per pyproject.toml)
 - **Descriptive names**: `query_with_retry()` not `qwr()`
@@ -193,7 +193,7 @@ python -m pytest
 
 ## 4. Sub-Project Specific Guidelines
 
-### 4.1. `claif`: CLAIF core framework
+### 4.1. `claif`:Claif core framework
 
 **Architecture Decisions:**
 
@@ -245,7 +245,7 @@ All sub-projects must pass:
 ### 5.2. Testing Strategy
 
 1. **Unit Tests**: Provider-specific logic
-2. **Integration Tests**: Provider + CLAIF core
+2. **Integration Tests**: Provider +Claif core
 3. **E2E Tests**: CLI commands with real providers
 4. **Performance Tests**: Response time, memory usage
 
@@ -260,7 +260,7 @@ Each sub-project must maintain:
 
 ## 6. Virtual Team Collaboration
 
-When developing CLAIF:
+When developingClaif:
 
 **Be creative, diligent, critical, relentless & funny!**
 
@@ -280,7 +280,7 @@ If compatibility issues arise, step back and focus on the unified interface goal
 
 ## 7. Release Coordination
 
-Since CLAIF uses a monorepo structure:
+SinceClaif uses a monorepo structure:
 
 1. Version all packages together
 2. Update inter-package dependencies
@@ -290,7 +290,7 @@ Since CLAIF uses a monorepo structure:
 
 ## 8. Final Checkpoint
 
-When completing any CLAIF development:
+When completing anyClaif development:
 
 **"Wait, but..."** - Review your changes:
 
@@ -301,4 +301,4 @@ When completing any CLAIF development:
 
 Repeat this reflection, but stick to "minimal viable next version" philosophy.
 
-Remember: CLAIF's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.
+Remember:Claif's strength is its unified interface. Every line of code should serve this goal while allowing providers to shine with their unique capabilities.

@@ -1,4 +1,4 @@
-"""Common utilities for CLAIF framework."""
+"""Common utilities forClaif framework."""
 
 from loguru import logger
 
@@ -12,12 +12,7 @@ from .errors import (
     TransportError,
     ValidationError,
 )
-from .install import (
-    InstallError,
-    find_executable,
-    install_provider,
-    uninstall_provider,
-)
+from .install import InstallError, find_executable, install_provider, uninstall_provider
 from .types import (
     ClaifOptions,
     ClaifResponse,

@@ -1,10 +1,10 @@
-"""Fire-based CLI for unified CLAIF wrapper."""
+"""Fire-based CLI for unifiedClaif wrapper."""
 
 import asyncio
+import os
 import shutil
 import sys
 import time
-import os
 
 import fire
 from rich.columns import Columns
@@ -32,7 +32,7 @@ console = Console()
 
 
 class ClaifCLI:
-    """Unified CLAIF CLI with Fire interface."""
+    """UnifiedClaif CLI with Fire interface."""
 
     def __init__(self, config_file: str | None = None, verbose: bool = False):
         """Initialize CLI with optional config file."""
@@ -43,7 +43,7 @@ class ClaifCLI:
         if verbose:
             self.config.verbose = True
         self.client = _client
-        logger.debug("Initialized CLAIF CLI")
+        logger.debug("InitializedClaif CLI")
 
     def query(
         self,
@@ -391,7 +391,7 @@ class ClaifCLI:
             port: Port to bind to
             reload: Enable auto-reload for development
         """
-        console.print("[bold]Starting CLAIF MCP Server[/bold]")
+        console.print("[bold]StartingClaif MCP Server[/bold]")
         console.print(f"Host: {host}")
         console.print(f"Port: {port}")
         console.print(f"Reload: {reload}")
@@ -406,7 +406,7 @@ class ClaifCLI:
             sys.exit(1)
 
     def config(self, action: str = "show", **kwargs) -> None:
-        """Manage CLAIF configuration.
+        """ManageClaif configuration.
 
         Args:
             action: Action to perform (show, set, save)
@@ -498,7 +498,7 @@ class ClaifCLI:
             console.print(f"[yellow]Interactive mode not available for {provider}[/yellow]")
 
     def install(self, providers: str = "all") -> None:
-        """Install CLAIF provider packages and bundle them.
+        """InstallClaif provider packages and bundle them.
 
         Args:
             providers: Comma-separated list of providers or 'all' (default)
@@ -518,10 +518,10 @@ class ClaifCLI:
                 console.print(f"[red]❌ Failed: {', '.join(results['failed'])}[/red]")
 
             if results["failed"]:
-                console.print(f"\n[yellow]Some installations failed. You can retry with:[/yellow]")
+                console.print("\n[yellow]Some installations failed. You can retry with:[/yellow]")
                 console.print(f"[yellow]claif install {','.join(results['failed'])}[/yellow]")
             else:
-                console.print(f"\n[green]🎉 All providers installed successfully![/green]")
+                console.print("\n[green]🎉 All providers installed successfully![/green]")
                 console.print("[green]You can now use 'claude', 'gemini', and 'codex' commands[/green]")
         else:
             # For specific providers, use individual install modules
@@ -567,20 +567,20 @@ class ClaifCLI:
                     failed.append(provider)
 
             # Summary
-            console.print(f"\n[bold]Installation Summary:[/bold]")
+            console.print("\n[bold]Installation Summary:[/bold]")
             if succeeded:
                 console.print(f"[green]✅ Succeeded: {', '.join(succeeded)}[/green]")
             if failed:
                 console.print(f"[red]❌ Failed: {', '.join(failed)}[/red]")
 
             if failed:
-                console.print(f"\n[yellow]Some installations failed. You can retry with:[/yellow]")
+                console.print("\n[yellow]Some installations failed. You can retry with:[/yellow]")
                 console.print(f"[yellow]claif install {','.join(failed)}[/yellow]")
             else:
-                console.print(f"\n[green]🎉 All providers installed successfully![/green]")
+                console.print("\n[green]🎉 All providers installed successfully![/green]")
 
     def uninstall(self, providers: str = "all") -> None:
-        """Uninstall CLAIF provider executables.
+        """UninstallClaif provider executables.
 
         Args:
             providers: Comma-separated list of providers or 'all' (default)
@@ -600,7 +600,7 @@ class ClaifCLI:
                 console.print(f"[red]❌ Failed: {', '.join(results['failed'])}[/red]")
 
             if results["uninstalled"]:
-                console.print(f"\n[green]🗑️ All providers uninstalled successfully![/green]")
+                console.print("\n[green]🗑️ All providers uninstalled successfully![/green]")
         else:
             # For specific providers, use individual uninstall modules
             to_uninstall = [p.strip() for p in providers.split(",")]
@@ -645,17 +645,17 @@ class ClaifCLI:
                     failed.append(provider)
 
             # Summary
-            console.print(f"\n[bold]Uninstallation Summary:[/bold]")
+            console.print("\n[bold]Uninstallation Summary:[/bold]")
             if succeeded:
                 console.print(f"[green]✅ Succeeded: {', '.join(succeeded)}[/green]")
             if failed:
                 console.print(f"[red]❌ Failed: {', '.join(failed)}[/red]")
 
             if succeeded:
-                console.print(f"\n[green]🗑️ Providers uninstalled successfully![/green]")
+                console.print("\n[green]🗑️ Providers uninstalled successfully![/green]")
 
     def status(self) -> None:
-        """Show installation status for all CLAIF providers."""
+        """Show installation status for allClaif providers."""
         from claif.install import get_install_location
 
         console.print("[bold]CLAIF Provider Status[/bold]\n")
@@ -696,7 +696,7 @@ class ClaifCLI:
                 if status["installed"]:
                     console.print(f"  [green]✅ Installed: {status['path']} ({status['type']})[/green]")
                 else:
-                    console.print(f"  [yellow]⚪ Not installed[/yellow]")
+                    console.print("  [yellow]⚪ Not installed[/yellow]")
 
             except Exception as e:
                 console.print(f"  [red]❌ Error checking status: {e}[/red]")
@@ -708,7 +708,7 @@ class ClaifCLI:
                 else:
                     console.print(f"  [yellow]⚪ Command '{provider}' not in PATH[/yellow]")
             except Exception:
-                console.print(f"  [red]❌ Error checking command availability[/red]")
+                console.print("  [red]❌ Error checking command availability[/red]")
 
             console.print()
 

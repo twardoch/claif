@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # this_file: claif/src/claif/common/install.py
-"""Shared installation utilities for CLAIF packages."""
+"""Shared installation utilities forClaif packages."""
 
 import os
 import platform
 import shutil
 import subprocess
 from pathlib import Path
-from typing import List, Optional
 
 from loguru import logger
 from rich.console import Console
@@ -25,8 +24,7 @@ def get_install_dir() -> Path:
     # Use ~/.local/bin on Unix-like systems, %LOCALAPPDATA%\Programs on Windows
     if platform.system() == "Windows":
         return Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "claif"
-    else:
-        return Path.home() / ".local" / "bin"
+    return Path.home() / ".local" / "bin"
 
 
 def ensure_install_dir() -> Path:
@@ -55,16 +53,15 @@ def ensure_bun_installed() -> bool:
         subprocess.run(["curl", "-fsSL", "https://bun.sh/install"], stdout=subprocess.PIPE, check=True)
 
         # Run the installer
-        result = subprocess.run(
+        subprocess.run(
             ["bash", "-c", "curl -fsSL https://bun.sh/install | bash"], capture_output=True, text=True, check=True
         )
 
         if bun_path.exists():
             logger.success("✓ bun installed successfully")
             return True
-        else:
-            logger.error("bun installation failed - executable not found")
-            return False
+        logger.error("bun installation failed - executable not found")
+        return False
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to install bun: {e}")
@@ -128,7 +125,7 @@ def install_npm_package_with_bun(package: str) -> bool:
 
     try:
         logger.info(f"Installing {package}...")
-        result = subprocess.run([str(bun_path), "add", "-g", package], capture_output=True, text=True, check=True)
+        subprocess.run([str(bun_path), "add", "-g", package], capture_output=True, text=True, check=True)
 
         logger.success(f"✓ {package} installed successfully")
         return True
@@ -167,7 +164,9 @@ def bundle_executable(provider: str, exec_name: str) -> bool:
 
     try:
         # Run the bundle script
-        result = subprocess.run(["bash", str(bundle_script)], cwd=bundle_script.parent, capture_output=True, text=True)
+        result = subprocess.run(
+            ["bash", str(bundle_script)], check=False, cwd=bundle_script.parent, capture_output=True, text=True
+        )
 
         if result.returncode == 0:
             # Check if the executable was created
@@ -177,12 +176,10 @@ def bundle_executable(provider: str, exec_name: str) -> bool:
             if exec_path.exists():
                 console.print(f"[green]✓ {provider} bundled successfully[/green]")
                 return True
-            else:
-                console.print(f"[red]Bundling succeeded but {exec_name} not found[/red]")
-                return False
-        else:
-            console.print(f"[red]Bundling failed: {result.stderr}[/red]")
+            console.print(f"[red]Bundling succeeded but {exec_name} not found[/red]")
             return False
+        console.print(f"[red]Bundling failed: {result.stderr}[/red]")
+        return False
 
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Failed to bundle {provider}: {e}[/red]")
@@ -296,8 +293,8 @@ def find_executable(exec_name: str, exec_path: str | None = None) -> str:
     if exec_path:
         if Path(exec_path).exists() or shutil.which(exec_path):
             return exec_path
-        else:
-            raise InstallError(f"Provided exec path does not exist: {exec_path}")
+        msg = f"Provided exec path does not exist: {exec_path}"
+        raise InstallError(msg)
 
     # Mode 2: Bundled executable if it exists in claif-owned directory
     from claif.install import get_install_location
@@ -317,11 +314,12 @@ def find_executable(exec_name: str, exec_path: str | None = None) -> str:
 
     package_name = package_map.get(exec_name, exec_name)
 
-    raise InstallError(
+    msg = (
         f"{exec_name} executable not found. "
         f"Please run 'claif_{exec_name} install' to install and bundle {package_name}, "
         f"or install it globally with 'npm install -g {package_name}'"
     )
+    raise InstallError(msg)
 
 
 def install_provider(provider: str, package: str, exec_name: str) -> bool:
@@ -381,12 +379,11 @@ def uninstall_provider(provider: str, exec_name: str) -> bool:
     if uninstall_bundled_executable(exec_name):
         console.print(f"[green]✓ {provider} provider uninstalled successfully[/green]")
         return True
-    else:
-        console.print(f"[red]Failed to uninstall {provider} provider[/red]")
-        return False
+    console.print(f"[red]Failed to uninstall {provider} provider[/red]")
+    return False
 
 
-def bundle_claude() -> Optional[Path]:
+def bundle_claude() -> Path | None:
     """Bundle Claude CLI with its yoga.wasm dependency."""
     try:
         # Get the claif-packages root directory (2 levels up from this file)
@@ -398,7 +395,7 @@ def bundle_claude() -> Optional[Path]:
             return None
 
         logger.info("Bundling Claude executable...")
-        result = subprocess.run(
+        subprocess.run(
             ["bash", str(bundle_script)], cwd=bundle_script.parent, capture_output=True, text=True, check=True
         )
 
@@ -410,9 +407,8 @@ def bundle_claude() -> Optional[Path]:
         if claude_exe.exists() and yoga_wasm.exists():
             logger.success("✓ Claude bundled successfully")
             return claude_dir
-        else:
-            logger.error("Claude bundling completed but files not found")
-            return None
+        logger.error("Claude bundling completed but files not found")
+        return None
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Claude bundling failed: {e.stderr}")
@@ -506,7 +502,7 @@ def install_codex(install_dir: Path) -> bool:
     return create_wrapper_script(install_dir, "codex", "@openai/codex")
 
 
-def install_providers(providers: List[str]) -> dict:
+def install_providers(providers: list[str]) -> dict:
     """Install the specified providers using the bundled approach."""
     if not ensure_bun_installed():
         return {"success": False, "failed": providers, "message": "bun installation failed"}
@@ -546,7 +542,7 @@ def install_providers(providers: List[str]) -> dict:
     return results
 
 
-def uninstall_providers(providers: List[str]) -> dict:
+def uninstall_providers(providers: list[str]) -> dict:
     """Uninstall the specified providers."""
     install_dir = get_install_location()
     bun_path = Path.home() / ".bun" / "bin" / "bun"
@@ -572,9 +568,9 @@ def uninstall_providers(providers: List[str]) -> dict:
                 # Claude doesn't have a global npm package to uninstall
                 pass
             elif provider == "gemini" and bun_path.exists():
-                subprocess.run([str(bun_path), "remove", "-g", "@google/gemini-cli"], capture_output=True)
+                subprocess.run([str(bun_path), "remove", "-g", "@google/gemini-cli"], check=False, capture_output=True)
             elif provider == "codex" and bun_path.exists():
-                subprocess.run([str(bun_path), "remove", "-g", "@openai/codex"], capture_output=True)
+                subprocess.run([str(bun_path), "remove", "-g", "@openai/codex"], check=False, capture_output=True)
 
             results["uninstalled"].append(provider)
             logger.success(f"✓ {provider} uninstalled")

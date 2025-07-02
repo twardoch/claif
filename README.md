@@ -1,4 +1,4 @@
-# CLAIF - Command Line Artificial Intelligence Framework
+#Claif - Command Line Artificial Intelligence Framework
 
 ## 1. Quickstart
 
@@ -10,7 +10,7 @@ pip install claif[all] && claif query "Explain quantum computing in one sentence
 
 CLAIF is a unified Python framework for interacting with multiple AI language model providers through a consistent interface. It provides a plugin-based architecture that enables seamless integration with various AI providers while maintaining a common API.
 
-## 2. What is CLAIF?
+## 2. What isClaif?
 
 CLAIF is a lightweight framework that provides:
 
@@ -184,7 +184,7 @@ async for message in client.query("Hello", options):
     print(message.content)
 ```
 
-## 6. Why CLAIF is Useful
+## 6. WhyClaif is Useful
 
 ### 6.1. **Provider Independence**
 - Switch between AI providers without changing your code
@@ -218,9 +218,9 @@ CLAIF uses a layered architecture:
 ┌─────────────────────────────┐
 │      User Application       │
 ├─────────────────────────────┤
-│        CLAIF CLI           │ ← Fire-based CLI with rich output
+│       Claif CLI           │ ← Fire-based CLI with rich output
 ├─────────────────────────────┤
-│      CLAIF Client          │ ← Async client with provider routing
+│     Claif Client          │ ← Async client with provider routing
 ├─────────────────────────────┤
 │    Common Types/Utils      │ ← Shared data structures and utilities
 ├─────────────────────────────┤

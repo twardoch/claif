@@ -1,4 +1,4 @@
-"""Configuration management for CLAIF framework."""
+"""Configuration management forClaif framework."""
 
 import contextlib
 import json
@@ -28,7 +28,7 @@ class ProviderConfig:
 
 @dataclass
 class Config:
-    """Main configuration for CLAIF."""
+    """Main configuration forClaif."""
 
     default_provider: Provider = Provider.CLAUDE
     providers: dict[str, ProviderConfig] = None
