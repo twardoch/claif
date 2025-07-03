@@ -1,6 +1,7 @@
 """Codex provider for Claif."""
 
 from collections.abc import AsyncIterator
+from typing import Any
 
 import claif_cod
 
@@ -9,9 +10,20 @@ from claif.providers.base import BaseProvider
 
 
 class CodexProvider(BaseProvider):
-    """Codex provider for Claif."""
+    """
+    Implements the Claif provider interface for OpenAI Codex.
 
-    def __init__(self):
+    This class acts as a bridge between the generic Claif client and the
+    `claif_cod` package, which handles the actual communication with the
+    Codex CLI.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initializes the CodexProvider.
+
+        Sets the provider name to "codex".
+        """
         super().__init__("codex")
 
     async def _query_impl(
@@ -19,8 +31,24 @@ class CodexProvider(BaseProvider):
         prompt: str,
         options: ClaifOptions,
     ) -> AsyncIterator[Message]:
-        """Query Codex implementation."""
-        logger.debug(f"Codex provider: {prompt[:50]}...")
+        """
+        Sends a query to the Codex CLI via the `claif_cod` package.
 
+        This is the core implementation method for the Codex provider,
+        called by the `BaseProvider`'s `query` method (which handles retries).
+
+        Args:
+            prompt: The input prompt for the Codex model.
+            options: `ClaifOptions` containing query parameters.
+
+        Yields:
+            An asynchronous iterator of `Message` objects received from the Codex CLI.
+
+        Raises:
+            Any exceptions raised by `claif_cod.query` (e.g., TransportError, ClaifTimeoutError).
+        """
+        logger.debug(f"Codex provider received query: {prompt[:50]}...")
+
+        # Delegate the query to the claif_cod package, which handles subprocess communication.
         async for message in claif_cod.query(prompt, options):
             yield message

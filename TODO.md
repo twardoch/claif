@@ -3,14 +3,7 @@
 ## CRITICAL (Blocking v1.0 Release)
 
 ### Core Framework Stability
-- [ ] **Fix pytest environment issues** - Resolve xdist/coverage plugin conflicts completely
 - [ ] **Verify 80%+ test coverage** - Run full test suite and confirm accurate coverage reporting
-- [ ] **Validate all error handling paths** - Ensure provider discovery and routing handle all edge cases
-- [ ] **Test provider integration** - Verify actual provider package discovery and loading
-
-### Essential Quality Gates
-- [ ] **All tests pass reliably** - No flaky tests or environment-dependent failures
-- [ ] **Error messages are actionable** - Users understand what went wrong and how to fix it
 - [ ] **Auto-install works consistently** - Provider installation succeeds in clean environments
 
 ## HIGH PRIORITY (Required for Stable Release)
@@ -82,9 +75,8 @@ Explicitly excluding to maintain focus:
 ## RISK MITIGATION
 
 ### High Risk Items
-1. **pytest environment issues** → Fix first, test in clean environments
-2. **Cross-platform failures** → Use GitHub Actions matrix early
-3. **Provider discovery bugs** → Comprehensive edge case testing
+1. **Cross-platform failures** → Use GitHub Actions matrix early
+2. **Provider discovery bugs** → Comprehensive edge case testing
 
 ### Medium Risk Items  
 1. **Documentation gaps** → Focus on installation and basic usage

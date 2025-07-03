@@ -7,7 +7,7 @@ import subprocess
 import time
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Union
 
 from loguru import logger
 from rich.console import Console
@@ -15,28 +15,47 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
+from claif.cli import _print, _print_warning
 
-APP_NAME = "com.twardoch.claif"
+APP_NAME: str = "com.twardoch.claif"
 
 
 def format_response(message: Message, format: str = "text", syntax_highlighting: bool = True) -> str:
-    """Format a message for display."""
+    """
+    Formats a given message for display based on the specified format.
+
+    Args:
+        message: The `Message` object to format.
+        format: The desired output format ('text', 'json', or 'markdown').
+        syntax_highlighting: If True and format is 'markdown', attempts to apply syntax highlighting.
+                             Note: Actual syntax highlighting depends on `rich` being configured
+                             to render code blocks, which is typically handled at the console level.
+
+    Returns:
+        A string representation of the message in the specified format.
+    """
     if format == "json":
+        # Convert the message to a dictionary and then to a JSON string.
         return json.dumps(message_to_dict(message), indent=2)
 
-    # Extract text content
-    text_parts = []
+    # Extract text content from the message. Handles both string and list of ContentBlock types.
+    text_parts: List[str] = []
     if isinstance(message.content, str):
         text_parts.append(message.content)
     else:
         for block in message.content:
             if isinstance(block, TextBlock):
                 text_parts.append(block.text)
+            # Add handling for other ContentBlock types if their text representation is needed
 
-    text = "\n".join(text_parts)
+    text: str = "\n".join(text_parts)
 
     if format == "markdown" and syntax_highlighting:
-        # Basic markdown rendering
+        # This part is a placeholder. Actual syntax highlighting for markdown
+        # content typically requires a markdown renderer that supports it,
+        # like `rich.markdown.Markdown` or similar, which would then be printed
+        # directly to a rich Console, not captured as a plain string.
+        # For now, it just prints the raw text content.
         console = Console()
         with console.capture() as capture:
             console.print(text)
@@ -45,10 +64,19 @@ def format_response(message: Message, format: str = "text", syntax_highlighting:
     return text
 
 
-def message_to_dict(message: Message) -> dict:
-    """Convert a message to a dictionary."""
-    content = message.content
+def message_to_dict(message: Message) -> Dict[str, Any]:
+    """
+    Converts a `Message` object into a dictionary for serialization.
+
+    Args:
+        message: The `Message` object to convert.
+
+    Returns:
+        A dictionary representation of the message.
+    """
+    content: Union[str, List[ContentBlock]] = message.content
     if isinstance(content, list):
+        # Recursively convert each content block to a dictionary.
         content = [block_to_dict(block) for block in content]
 
     return {
@@ -57,17 +85,36 @@ def message_to_dict(message: Message) -> dict:
     }
 
 
-def block_to_dict(block: ContentBlock) -> dict:
-    """Convert a content block to a dictionary."""
+def block_to_dict(block: ContentBlock) -> Dict[str, Any]:
+    """
+    Converts a `ContentBlock` object into a dictionary.
+
+    Args:
+        block: The `ContentBlock` object to convert.
+
+    Returns:
+        A dictionary representation of the content block.
+    """
     if isinstance(block, TextBlock):
         return {"type": "text", "text": block.text}
+    # For other dataclass-based ContentBlocks (e.g., ToolUseBlock, ToolResultBlock),
+    # their __dict__ representation is usually sufficient for serialization.
     if hasattr(block, "__dict__"):
         return block.__dict__
+    # Fallback for unexpected types, converting them to a string representation.
     return {"type": "unknown", "data": str(block)}
 
 
 def format_metrics(metrics: ResponseMetrics) -> str:
-    """Format response metrics for display."""
+    """
+    Formats response metrics into a human-readable table for display.
+
+    Args:
+        metrics: The `ResponseMetrics` object containing performance data.
+
+    Returns:
+        A string containing the formatted metrics table.
+    """
     table = Table(title="Response Metrics", show_header=False)
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
@@ -86,117 +133,195 @@ def format_metrics(metrics: ResponseMetrics) -> str:
 
 
 def create_progress_bar(description: str = "Processing...") -> Progress:
-    """Create a progress bar for long operations."""
+    """
+    Creates and returns a `rich` Progress bar instance.
+
+    Args:
+        description: The initial description to display next to the spinner.
+
+    Returns:
+        A `rich.progress.Progress` object configured with a spinner and text column.
+    """
     return Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
-        transient=True,
+        transient=True,  # Progress bar disappears after completion
     )
 
 
 def ensure_directory(path: Path) -> None:
-    """Ensure a directory exists."""
+    """
+    Ensures that a given directory path exists.
+
+    If the directory or any parent directories do not exist, they are created.
+
+    Args:
+        path: The `Path` object representing the directory to ensure.
+    """
     path.mkdir(parents=True, exist_ok=True)
 
 
 def timestamp() -> str:
-    """Get current timestamp as string."""
+    """
+    Generates a formatted timestamp string.
+
+    Returns:
+        A string representing the current time in YYYYMMDD_HHMMSS format.
+    """
     return time.strftime("%Y%m%d_%H%M%S")
 
 
 def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
-    """Truncate text to maximum length."""
+    """
+    Truncates a string to a specified maximum length, adding a suffix if truncated.
+
+    Args:
+        text: The input string to truncate.
+        max_length: The maximum desired length of the string.
+        suffix: The suffix to append if the string is truncated. Defaults to "...".
+
+    Returns:
+        The truncated string, or the original string if its length is within `max_length`.
+    """
     if len(text) <= max_length:
         return text
     return text[: max_length - len(suffix)] + suffix
 
 
-def parse_content_blocks(content: Any) -> list[ContentBlock]:
-    """Parse various content formats into content blocks."""
+def parse_content_blocks(content: Any) -> List[ContentBlock]:
+    """
+    Parses various content formats into a standardized list of `ContentBlock` objects.
+
+    This function attempts to convert raw content (string, list of dicts, etc.)
+    into a list of `TextBlock` instances, ensuring consistency for message handling.
+
+    Args:
+        content: The raw content to parse. Can be a string, a list of dictionaries,
+                 or any other type that can be converted to a string.
+
+    Returns:
+        A list of `ContentBlock` objects, primarily `TextBlock` instances.
+    """
     if isinstance(content, str):
         return [TextBlock(text=content)]
     if isinstance(content, list):
-        blocks = []
+        blocks: List[ContentBlock] = []
         for item in content:
             if isinstance(item, TextBlock):
                 blocks.append(item)
             elif isinstance(item, dict):
-                if item.get("type") == "text":
+                # Attempt to parse dictionary as a TextBlock if it has a 'text' key
+                if item.get("type") == "text" and "text" in item:
                     blocks.append(TextBlock(text=item.get("text", "")))
+                else:
+                    # Fallback for other dictionary structures
+                    blocks.append(TextBlock(text=str(item)))
             else:
+                # Convert any other item type directly to a string TextBlock
                 blocks.append(TextBlock(text=str(item)))
         return blocks
+    # Fallback for any other content type, converting it to a string TextBlock
     return [TextBlock(text=str(content))]
 
 
 def get_claif_data_dir() -> Path:
-    """Get the claif data directory path."""
+    """
+    Retrieves the base data directory for Claif application data.
+
+    This directory is used for storing configuration, sessions, and other
+    application-specific files in a platform-appropriate location.
+
+    Returns:
+        A `Path` object pointing to the Claif data directory.
+    """
     from platformdirs import user_data_dir
 
     return Path(user_data_dir(APP_NAME, "claif"))
 
 
 def get_claif_bin_path() -> Path:
-    """Get the claif bin directory path."""
-    claif_data_dir = get_claif_data_dir()
+    """
+    Retrieves the binary installation directory for Claif-managed tools.
+
+    This is a subdirectory within the main Claif data directory where
+    executables installed by Claif (e.g., Claude CLI, Gemini CLI) are placed.
+
+    Returns:
+        A `Path` object pointing to the Claif binary directory.
+    """
+    claif_data_dir: Path = get_claif_data_dir()
     return claif_data_dir / "bin"
 
 
-def inject_claif_bin_to_path() -> dict:
-    """Inject Claif bin directory to PATH.
+def inject_claif_bin_to_path() -> Dict[str, str]:
+    """
+    Injects the Claif binary directory into the system's PATH environment variable.
+
+    This ensures that executables installed by Claif are discoverable by
+    subprocesses launched by the application.
 
     Returns:
-        Environment with Claif bin in PATH
+        A dictionary representing the modified environment variables with the
+        Claif binary path prepended to the PATH.
     """
-    env = os.environ.copy()
-    claif_bin = get_install_location()
+    env: Dict[str, str] = os.environ.copy()
+    claif_bin_path: Path = get_claif_bin_path() # Use get_claif_bin_path for consistency
 
-    path_sep = ";" if os.name == "nt" else ":"
-    current_path = env.get("PATH", "")
+    path_sep: str = ";" if os.name == "nt" else ":"
+    current_path: str = env.get("PATH", "")
 
-    if str(claif_bin) not in current_path:
-        env["PATH"] = f"{claif_bin}{path_sep}{current_path}"
+    # Prepend the Claif bin path to the existing PATH if it's not already there.
+    if str(claif_bin_path) not in current_path.split(path_sep):
+        env["PATH"] = f"{claif_bin_path}{path_sep}{current_path}"
+        logger.debug(f"Injected {claif_bin_path} into PATH.")
+    else:
+        logger.debug(f"{claif_bin_path} already in PATH.")
 
     return env
 
 
 def get_install_location() -> Path:
-    """Get the install location for Claif tools.
+    """
+    Retrieves the primary installation location for Claif-managed tools.
+
+    This function determines a platform-appropriate directory where external
+    CLI tools (like Claude Code CLI, Gemini CLI) are installed by Claif.
 
     Returns:
-        Path to install directory
+        A `Path` object representing the installation directory.
     """
     if os.name == "nt":
-        # Windows: use %LOCALAPPDATA%\claif\bin
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        # On Windows, use %LOCALAPPDATA%\claif\bin
+        base: Path = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
         return base / "claif" / "bin"
-    # Unix-like: use ~/.local/bin/claif
-    return Path.home() / ".local" / "bin" / "claif"
+    else:
+        # On Unix-like systems, use ~/.local/bin/claif
+        return Path.home() / ".local" / "bin" / "claif"
 
 
 def open_commands_in_terminals(commands: Sequence[str]) -> None:
-    """Open each command in a new terminal window.
+    """
+    Opens each provided shell command in a new terminal window.
 
-    Uses the simplest built-in terminal for each platform:
-    - macOS: Terminal.app
-    - Windows: cmd.exe
-    - Linux: gnome-terminal or x-terminal-emulator
+    This utility attempts to use platform-specific commands to launch new
+    terminal instances and execute the given commands within them.
 
     Args:
-        commands: List of shell commands to run in separate terminals
+        commands: A sequence of shell commands (strings) to be executed.
 
     Raises:
-        NotImplementedError: If running on an unsupported operating system
+        NotImplementedError: If the operating system is not supported or a
+                             suitable terminal emulator cannot be found.
     """
-    system = platform.system()
-    logger.debug(f"Opening {len(commands)} commands on {system}")
+    system: str = platform.system()
+    logger.debug(f"Attempting to open {len(commands)} commands in new terminals on {system}.")
 
     for cmd in commands:
         logger.debug(f"Opening terminal for command: {cmd}")
         try:
             match system:
                 case "Darwin":
-                    # macOS Terminal.app
+                    # macOS: Use osascript to tell Terminal.app to execute the command.
                     subprocess.Popen(
                         [
                             "osascript",
@@ -205,55 +330,61 @@ def open_commands_in_terminals(commands: Sequence[str]) -> None:
                         ]
                     )
                 case "Windows":
-                    # Windows CMD
+                    # Windows: Use `start cmd /k` to open a new command prompt and run the command.
                     subprocess.Popen(["cmd", "/c", "start", "cmd", "/k", cmd], shell=True)
                 case "Linux":
-                    # Try common Linux terminals
-                    terminals = [
-                        ["gnome-terminal", "--", "bash", "-c", f"{cmd}; exec bash"],
-                        ["x-terminal-emulator", "-e", f"bash -c '{cmd}; exec bash'"],
-                        ["xterm", "-e", f"bash -c '{cmd}; exec bash'"],
+                    # Linux: Try common terminal emulators in order of preference.
+                    terminals: List[List[str]] = [
+                        ["gnome-terminal", "--", "bash", "-c", f"{cmd}; exec bash"], # gnome-terminal
+                        ["x-terminal-emulator", "-e", f"bash -c '{cmd}; exec bash'"], # Generic X terminal
+                        ["xterm", "-e", f"bash -c '{cmd}; exec bash'"], # xterm
                     ]
 
-                    success = False
+                    success: bool = False
                     for terminal_cmd in terminals:
                         try:
                             subprocess.Popen(terminal_cmd)
                             success = True
                             break
                         except FileNotFoundError:
+                            # Try the next terminal if the current one is not found.
                             continue
 
                     if not success:
-                        logger.warning("No suitable terminal found on Linux")
-                        msg = "No suitable terminal emulator found"
+                        logger.warning("No suitable terminal emulator found on Linux for command.")
+                        msg = "No suitable terminal emulator found on Linux. Please install gnome-terminal, x-terminal-emulator, or xterm."
                         raise NotImplementedError(msg)
                 case _:
-                    msg = f"Unsupported OS: {system}"
+                    # Handle unsupported operating systems.
+                    msg = f"Unsupported operating system for opening terminals: {system}"
                     raise NotImplementedError(msg)
         except Exception as e:
-            logger.warning(f"Failed to open terminal for '{cmd}': {e}")
+            logger.warning(f"Failed to open terminal for command '{cmd}': {e}")
 
 
-def prompt_tool_configuration(tool_name: str, config_commands: list[str]) -> None:
-    """Prompt user to configure a tool and optionally open terminals.
+def prompt_tool_configuration(tool_name: str, config_commands: List[str]) -> None:
+    """
+    Prompts the user to configure a tool and optionally opens terminals to run configuration commands.
 
     Args:
-        tool_name: Name of the tool (e.g., 'Claude', 'Gemini')
-        config_commands: List of configuration commands to show/run
+        tool_name: The name of the tool (e.g., 'Claude', 'Gemini') that needs configuration.
+        config_commands: A list of shell commands (strings) that can be run to configure the tool.
     """
 
     if config_commands:
-        for _cmd in config_commands:
-            pass
+        # Inform the user about the commands that can be run.
+        _print(f"\nTo configure {tool_name}, you can run the following commands:")
+        for cmd in config_commands:
+            _print(f"  [cyan]{cmd}[/cyan]")
 
         try:
-            response = input(f"\nOpen terminal(s) to configure {tool_name}? (y/N): ")
+            response: str = input(f"\nWould you like to open terminal(s) to run these commands for {tool_name}? (y/N): ")
             if response.lower().startswith("y"):
                 open_commands_in_terminals(config_commands)
+                _print("Terminals opened. Please follow the instructions in each terminal to complete the configuration.")
             else:
-                pass
+                _print("Configuration commands not executed. You can run them manually later.")
         except (KeyboardInterrupt, EOFError):
-            pass
+            _print_warning("Configuration prompt interrupted. Please run configuration commands manually.")
     else:
-        pass
+        _print(f"No specific configuration commands provided for {tool_name}.")

@@ -14,10 +14,10 @@
 **Timeline**: 1-2 weeks
 **Priority**: CRITICAL
 
-- **Fix pytest environment issues** - Resolve xdist/coverage conflicts completely
-- **Verify 80%+ test coverage** - Run full test suite, confirm accurate coverage reporting  
-- **Validate error handling paths** - Ensure provider discovery handles all edge cases
-- **Test provider integration** - Verify actual provider package discovery and loading
+- [x] **Fix pytest environment issues** - Resolve xdist/coverage conflicts completely
+- [ ] **Verify 80%+ test coverage** - Run full test suite, confirm accurate coverage reporting  
+- [x] **Validate error handling paths** - Ensure provider discovery handles all edge cases
+- [x] **Test provider integration** - Verify actual provider package discovery and loading
 
 **Success Criteria**: All tests pass reliably, coverage is accurate, error paths tested
 
@@ -25,9 +25,9 @@
 **Timeline**: 1 week
 **Priority**: CRITICAL
 
-- **Eliminate flaky tests** - No environment-dependent test failures
-- **Actionable error messages** - Users understand problems and solutions
-- **Consistent auto-install** - Provider installation works in clean environments
+- [x] **Eliminate flaky tests** - No environment-dependent test failures
+- [x] **Actionable error messages** - Users understand problems and solutions
+- [ ] **Consistent auto-install** - Provider installation works in clean environments
 
 **Success Criteria**: 99%+ test reliability, clear error messaging, robust auto-install
 
