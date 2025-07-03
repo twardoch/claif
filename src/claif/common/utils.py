@@ -425,3 +425,50 @@ def prompt_tool_configuration(tool_name: str, config_commands: List[str]) -> Non
             _print_warning("Configuration prompt interrupted. Please run configuration commands manually.")
     else:
         _print(f"No specific configuration commands provided for {tool_name}.")
+
+def process_images(images: str) -> List[str]:
+    """
+    Processes a comma-separated string of image paths or URLs.
+
+    Downloads remote URLs to temporary files and resolves local paths.
+
+    Args:
+        images: A comma-separated string of image paths (local or URL).
+
+    Returns:
+        A list of resolved local file paths for the images.
+
+    Raises:
+        Exception: If an image cannot be processed (e.g., download fails, file not found).
+    """
+    import tempfile
+    import urllib.request
+
+    image_list = [img.strip() for img in images.split(",") if img.strip()]
+    processed_paths = []
+
+    for img in image_list:
+        if img.startswith(("http://", "https://")):
+            # Download URL to temp file
+            try:
+                suffix = Path(img).suffix or ".jpg"
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                    logger.debug(f"Downloading image from {img}")
+                    with urllib.request.urlopen(img) as response:
+                        tmp_file.write(response.read())
+                    processed_paths.append(tmp_file.name)
+                    logger.debug(f"Downloaded to {tmp_file.name}")
+            except Exception as e:
+                _print_error(f"Failed to download image {img}: {e}")
+                continue
+        else:
+            # Local file path
+            path = Path(img).expanduser().resolve()
+            if path.exists():
+                processed_paths.append(str(path))
+            else:
+                _print_error(f"Image file not found: {img}")
+                continue
+
+    return processed_paths
+
