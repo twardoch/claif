@@ -89,6 +89,7 @@ class BaseProvider(ABC):
             ConnectionError: If all retry attempts fail due to a network connection issue.
             Exception: For any other unhandled exceptions that persist after all retries
                        or are not configured to be retried.
+        """
         # If retries are explicitly disabled, execute the query once without retry.
         if options.no_retry or options.retry_count <= 0:
             logger.debug(f"{self.name} provider: Retries disabled, performing single attempt.")
