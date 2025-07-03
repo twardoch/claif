@@ -1,8 +1,8 @@
 remote_theme: just-the-docs/just-the-docs
-title: Claif - Command-Line Artificial Intelligence Framework
+title: Claif
 description: >-
   Claif (Command-Line AI Framework) is a unified interface for interacting with various large language models (LLMs) from the command line.
-color_scheme: dark
+color_scheme: light
 search_enabled: true
 aux_links:
   "Claif on GitHub":
