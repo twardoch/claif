@@ -12,47 +12,49 @@ from typing import Any, Dict, List, Union
 from loguru import logger
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.syntax import Syntax
 from rich.table import Table
+from rich.theme import Theme
 
 from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
-from rich.console import Console
-from rich.theme import Theme
-from rich.syntax import Syntax
 
 # Define a custom theme for consistent output styling
-cli_theme = Theme({
-    "info": "dim cyan",
-    "warning": "magenta",
-    "danger": "bold red",
-    "success": "bold green",
-    "debug": "dim white"
-})
+cli_theme = Theme(
+    {"info": "dim cyan", "warning": "magenta", "danger": "bold red", "success": "bold green", "debug": "dim white"}
+)
 console = Console(theme=cli_theme)
+
 
 def _print(message: str) -> None:
     """Prints a general message to the console."""
     console.print(message)
 
+
 def _print_error(message: str) -> None:
     """Prints an error message to the console in red."""
     console.print(f"[danger]Error:[/danger] {message}")
+
 
 def _print_success(message: str) -> None:
     """Prints a success message to the console in green."""
     console.print(f"[success]Success:[/success] {message}")
 
+
 def _print_warning(message: str) -> None:
     """Prints a warning message to the console in yellow/magenta."""
     console.print(f"[warning]Warning:[/warning] {message}")
+
 
 def _confirm(message: str) -> bool:
     """Simple confirmation prompt."""
     response = input(f"{message} (y/N): ").strip().lower()
     return response in ("y", "yes")
 
+
 def _prompt(message: str) -> str:
     """Simple input prompt."""
     return input(f"{message}: ").strip()
+
 
 APP_NAME: str = "com.twardoch.claif"
 
@@ -76,7 +78,7 @@ def format_response(message: Message, format: str = "text", syntax_highlighting:
         return json.dumps(message_to_dict(message), indent=2)
 
     # Extract text content from the message. Handles both string and list of ContentBlock types.
-    text_parts: List[str] = []
+    text_parts: list[str] = []
     if isinstance(message.content, str):
         text_parts.append(message.content)
     else:
@@ -101,7 +103,7 @@ def format_response(message: Message, format: str = "text", syntax_highlighting:
     return text
 
 
-def message_to_dict(message: Message) -> Dict[str, Any]:
+def message_to_dict(message: Message) -> dict[str, Any]:
     """
     Converts a `Message` object into a dictionary for serialization.
 
@@ -111,7 +113,7 @@ def message_to_dict(message: Message) -> Dict[str, Any]:
     Returns:
         A dictionary representation of the message.
     """
-    content: Union[str, List[ContentBlock]] = message.content
+    content: str | list[ContentBlock] = message.content
     if isinstance(content, list):
         # Recursively convert each content block to a dictionary.
         content = [block_to_dict(block) for block in content]
@@ -122,7 +124,7 @@ def message_to_dict(message: Message) -> Dict[str, Any]:
     }
 
 
-def block_to_dict(block: ContentBlock) -> Dict[str, Any]:
+def block_to_dict(block: ContentBlock) -> dict[str, Any]:
     """
     Converts a `ContentBlock` object into a dictionary.
 
@@ -225,7 +227,7 @@ def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
     return text[: max_length - len(suffix)] + suffix
 
 
-def parse_content_blocks(content: Any) -> List[ContentBlock]:
+def parse_content_blocks(content: Any) -> list[ContentBlock]:
     """
     Parses various content formats into a standardized list of `ContentBlock` objects.
 
@@ -242,7 +244,7 @@ def parse_content_blocks(content: Any) -> List[ContentBlock]:
     if isinstance(content, str):
         return [TextBlock(text=content)]
     if isinstance(content, list):
-        blocks: List[ContentBlock] = []
+        blocks: list[ContentBlock] = []
         for item in content:
             if isinstance(item, TextBlock):
                 blocks.append(item)
@@ -290,7 +292,7 @@ def get_claif_bin_path() -> Path:
     return claif_data_dir / "bin"
 
 
-def inject_claif_bin_to_path() -> Dict[str, str]:
+def inject_claif_bin_to_path() -> dict[str, str]:
     """
     Injects the Claif binary directory into the system's PATH environment variable.
 
@@ -301,8 +303,8 @@ def inject_claif_bin_to_path() -> Dict[str, str]:
         A dictionary representing the modified environment variables with the
         Claif binary path prepended to the PATH.
     """
-    env: Dict[str, str] = os.environ.copy()
-    claif_bin_path: Path = get_claif_bin_path() # Use get_claif_bin_path for consistency
+    env: dict[str, str] = os.environ.copy()
+    claif_bin_path: Path = get_claif_bin_path()  # Use get_claif_bin_path for consistency
 
     path_sep: str = ";" if os.name == "nt" else ":"
     current_path: str = env.get("PATH", "")
@@ -331,9 +333,8 @@ def get_install_location() -> Path:
         # On Windows, use %LOCALAPPDATA%\claif\bin
         base: Path = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
         return base / "claif" / "bin"
-    else:
-        # On Unix-like systems, use ~/.local/bin/claif
-        return Path.home() / ".local" / "bin" / "claif"
+    # On Unix-like systems, use ~/.local/bin/claif
+    return Path.home() / ".local" / "bin" / "claif"
 
 
 def open_commands_in_terminals(commands: Sequence[str]) -> None:
@@ -371,10 +372,10 @@ def open_commands_in_terminals(commands: Sequence[str]) -> None:
                     subprocess.Popen(["cmd", "/c", "start", "cmd", "/k", cmd], shell=True)
                 case "Linux":
                     # Linux: Try common terminal emulators in order of preference.
-                    terminals: List[List[str]] = [
-                        ["gnome-terminal", "--", "bash", "-c", f"{cmd}; exec bash"], # gnome-terminal
-                        ["x-terminal-emulator", "-e", f"bash -c '{cmd}; exec bash'"], # Generic X terminal
-                        ["xterm", "-e", f"bash -c '{cmd}; exec bash'"], # xterm
+                    terminals: list[list[str]] = [
+                        ["gnome-terminal", "--", "bash", "-c", f"{cmd}; exec bash"],  # gnome-terminal
+                        ["x-terminal-emulator", "-e", f"bash -c '{cmd}; exec bash'"],  # Generic X terminal
+                        ["xterm", "-e", f"bash -c '{cmd}; exec bash'"],  # xterm
                     ]
 
                     success: bool = False
@@ -399,7 +400,7 @@ def open_commands_in_terminals(commands: Sequence[str]) -> None:
             logger.warning(f"Failed to open terminal for command '{cmd}': {e}")
 
 
-def prompt_tool_configuration(tool_name: str, config_commands: List[str]) -> None:
+def prompt_tool_configuration(tool_name: str, config_commands: list[str]) -> None:
     """
     Prompts the user to configure a tool and optionally opens terminals to run configuration commands.
 
@@ -415,10 +416,14 @@ def prompt_tool_configuration(tool_name: str, config_commands: List[str]) -> Non
             _print(f"  [cyan]{cmd}[/cyan]")
 
         try:
-            response: str = input(f"\nWould you like to open terminal(s) to run these commands for {tool_name}? (y/N): ")
+            response: str = input(
+                f"\nWould you like to open terminal(s) to run these commands for {tool_name}? (y/N): "
+            )
             if response.lower().startswith("y"):
                 open_commands_in_terminals(config_commands)
-                _print("Terminals opened. Please follow the instructions in each terminal to complete the configuration.")
+                _print(
+                    "Terminals opened. Please follow the instructions in each terminal to complete the configuration."
+                )
             else:
                 _print("Configuration commands not executed. You can run them manually later.")
         except (KeyboardInterrupt, EOFError):
@@ -426,7 +431,8 @@ def prompt_tool_configuration(tool_name: str, config_commands: List[str]) -> Non
     else:
         _print(f"No specific configuration commands provided for {tool_name}.")
 
-def process_images(images: str) -> List[str]:
+
+def process_images(images: str) -> list[str]:
     """
     Processes a comma-separated string of image paths or URLs.
 
@@ -471,4 +477,3 @@ def process_images(images: str) -> List[str]:
                 continue
 
     return processed_paths
-

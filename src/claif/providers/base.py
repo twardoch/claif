@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import Any, Optional, Type, Tuple
+from typing import Any, Optional, Tuple, Type
 
 from tenacity import (
     AsyncRetrying,
@@ -98,7 +98,7 @@ class BaseProvider(ABC):
             return
 
         # Define the types of exceptions that should trigger a retry.
-        retry_exceptions: Tuple[Type[Exception], ...] = (
+        retry_exceptions: tuple[type[Exception], ...] = (
             ProviderError,
             ClaifTimeoutError,
             ConnectionError,

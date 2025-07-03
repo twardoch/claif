@@ -277,7 +277,7 @@ def uninstall_bundled_executable(exec_name: str) -> bool:
 
 
 def find_executable(exec_name: str, exec_path: str | None = None) -> str:
-    """Find executable using simplified 3-mode logic.
+    """Find executable using simplified 3-mode logic with Windows compatibility.
 
     Args:
         exec_name: Name of the executable (e.g., 'claude', 'gemini', 'codex')
@@ -304,10 +304,19 @@ def find_executable(exec_name: str, exec_path: str | None = None) -> str:
     if bundled_path.exists():
         return str(bundled_path)
 
-    # Mode 3: External executable via shutil.which
+    # Mode 3: External executable via shutil.which with Windows extensions
+    # Try the exact name first
     external_path = shutil.which(exec_name)
     if external_path:
         return external_path
+
+    # On Windows, also try common executable extensions
+    if platform.system() == "Windows":
+        for ext in [".exe", ".cmd", ".bat"]:
+            windows_name = f"{exec_name}{ext}"
+            external_path = shutil.which(windows_name)
+            if external_path:
+                return external_path
 
     # If nothing found, provide helpful error message
     package_map = {"claude": "@anthropic-ai/claude-code", "gemini": "@google/gemini-cli", "codex": "@openai/codex"}

@@ -223,9 +223,7 @@ class TestClaifCLIParallel:
     @patch("claif.cli.console")
     @patch("claif.client.query_all")
     @patch("claif.cli.load_config")
-    def test_parallel_compare_mode(
-        self, mock_load_config, mock_query_all, mock_console, mock_panel, mock_columns
-    ):
+    def test_parallel_compare_mode(self, mock_load_config, mock_query_all, mock_console, mock_panel, mock_columns):
         """Test parallel query with comparison mode."""
         # Setup
         mock_config = Config(default_provider=Provider.CLAUDE)

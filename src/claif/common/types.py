@@ -94,7 +94,7 @@ class ToolResultBlock:
     type: str = "tool_result"
     tool_use_id: str = ""
     # Use `field(default_factory=list)` for mutable default arguments.
-    content: List[Union[TextBlock, Any]] = field(default_factory=list)
+    content: list[TextBlock | Any] = field(default_factory=list)
     is_error: bool = False
 
 
@@ -117,7 +117,7 @@ class Message:
     """
 
     role: MessageRole
-    content: Union[str, List[ContentBlock]]
+    content: str | list[ContentBlock]
 
     def __post_init__(self) -> None:
         """
@@ -155,16 +155,16 @@ class ClaifOptions:
         no_retry: If True, disables all retry attempts.
     """
 
-    provider: Optional[Provider] = None
-    model: Optional[str] = None
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    system_prompt: Optional[str] = None
-    timeout: Optional[int] = None
+    provider: Provider | None = None
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    system_prompt: str | None = None
+    timeout: int | None = None
     verbose: bool = False
     output_format: str = "text"
-    config_file: Optional[str] = None
-    session_id: Optional[str] = None
+    config_file: str | None = None
+    session_id: str | None = None
     cache: bool = False
     retry_count: int = 3
     retry_delay: float = 1.0
@@ -190,8 +190,8 @@ class ResponseMetrics:
     duration: float = 0.0
     tokens_used: int = 0
     cost: float = 0.0
-    provider: Optional[Provider] = None
-    model: Optional[str] = None
+    provider: Provider | None = None
+    model: str | None = None
     cached: bool = False
 
 
@@ -210,7 +210,7 @@ class ClaifResponse:
         error: Optional error message if the query failed at a high level.
     """
 
-    messages: List[Message]
-    metrics: Optional[ResponseMetrics] = None
-    session_id: Optional[str] = None
-    error: Optional[str] = None
+    messages: list[Message]
+    metrics: ResponseMetrics | None = None
+    session_id: str | None = None
+    error: str | None = None

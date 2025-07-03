@@ -28,10 +28,10 @@ class ProviderConfig:
     """
 
     enabled: bool = True
-    model: Optional[str] = None
-    api_key_env: Optional[str] = None
+    model: str | None = None
+    api_key_env: str | None = None
     timeout: int = 120
-    extra: Dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -62,18 +62,20 @@ class Config:
     """
 
     default_provider: Provider = Provider.CLAUDE
-    providers: Dict[Provider, ProviderConfig] = field(default_factory=lambda: {
-        Provider.CLAUDE: ProviderConfig(api_key_env="ANTHROPIC_API_KEY"),
-        Provider.GEMINI: ProviderConfig(api_key_env="GEMINI_API_KEY"),
-        Provider.CODEX: ProviderConfig(model="o4-mini"),
-    })
+    providers: dict[Provider, ProviderConfig] = field(
+        default_factory=lambda: {
+            Provider.CLAUDE: ProviderConfig(api_key_env="ANTHROPIC_API_KEY"),
+            Provider.GEMINI: ProviderConfig(api_key_env="GEMINI_API_KEY"),
+            Provider.CODEX: ProviderConfig(model="o4-mini"),
+        }
+    )
     cache_enabled: bool = True
     cache_ttl: int = 3600
-    session_dir: Optional[str] = None  # Initialized in __post_init__
+    session_dir: str | None = None  # Initialized in __post_init__
     verbose: bool = False
     output_format: str = "text"
-    retry_config: Dict[str, Any] = field(default_factory=lambda: {"count": 3, "delay": 1.0, "backoff": 2.0})
-    mcp_servers: Dict[str, Any] = field(default_factory=dict)
+    retry_config: dict[str, Any] = field(default_factory=lambda: {"count": 3, "delay": 1.0, "backoff": 2.0})
+    mcp_servers: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """
@@ -85,7 +87,7 @@ class Config:
             self.session_dir = str(Path.home() / ".claif" / "sessions")
 
 
-def load_config(config_file: Optional[str] = None) -> Config:
+def load_config(config_file: str | None = None) -> Config:
     """
     Loads the Claif configuration from various sources.
 
@@ -107,7 +109,7 @@ def load_config(config_file: Optional[str] = None) -> Config:
     config = Config()  # Start with default configuration
 
     # Define potential paths for configuration files, ordered by precedence.
-    config_paths: List[Path] = [
+    config_paths: list[Path] = [
         Path.home() / ".claif" / "config.json",
         Path.home() / ".config" / "claif" / "config.json",
         Path("claif.json"),
@@ -122,8 +124,8 @@ def load_config(config_file: Optional[str] = None) -> Config:
     for path in config_paths:
         if path.exists():
             try:
-                with open(path, "r") as f:
-                    data: Dict[str, Any] = json.load(f)
+                with open(path) as f:
+                    data: dict[str, Any] = json.load(f)
                     config = merge_config(config, data)  # Merge file data into current config
                 logger.debug(f"Loaded configuration from file: {path}")
             except Exception as e:
@@ -132,12 +134,11 @@ def load_config(config_file: Optional[str] = None) -> Config:
                 raise ConfigurationError(msg) from e
 
     # Override configuration with environment variables.
-    config = load_env_config(config)
-
-    return config
+    return load_env_config(config)
 
 
-def merge_config(base: Config, overrides: Dict[str, Any]) -> Config:
+
+def merge_config(base: Config, overrides: dict[str, Any]) -> Config:
     """
     Recursively merges override settings into a base `Config` object.
 
@@ -152,9 +153,9 @@ def merge_config(base: Config, overrides: Dict[str, Any]) -> Config:
         A new `Config` object with merged settings.
     """
     # Convert the base Config object to a dictionary for easier merging.
-    base_dict: Dict[str, Any] = asdict(base)
+    base_dict: dict[str, Any] = asdict(base)
 
-    def deep_merge(d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:
+    def deep_merge(d1: dict[str, Any], d2: dict[str, Any]) -> dict[str, Any]:
         """
         Helper function for recursive dictionary merging.
         """
@@ -167,14 +168,14 @@ def merge_config(base: Config, overrides: Dict[str, Any]) -> Config:
         return result
 
     # Perform the deep merge of the base dictionary and overrides.
-    merged_dict: Dict[str, Any] = deep_merge(base_dict, overrides)
+    merged_dict: dict[str, Any] = deep_merge(base_dict, overrides)
 
     # Special handling for 'providers' section to ensure ProviderConfig objects are created.
     if "providers" in merged_dict and isinstance(merged_dict["providers"], dict):
-        new_providers_config: Dict[Provider, ProviderConfig] = {}
+        new_providers_config: dict[Provider, ProviderConfig] = {}
         for provider_name, pconfig_data in merged_dict["providers"].items():
             try:
-                provider_enum = Provider(provider_name) # Convert string name to Provider enum
+                provider_enum = Provider(provider_name)  # Convert string name to Provider enum
                 # If the base config already has this provider, merge into it.
                 if provider_enum in base.providers and isinstance(pconfig_data, dict):
                     existing_pconfig = base.providers[provider_enum]
@@ -249,22 +250,22 @@ def load_env_config(config: Config) -> Config:
     if retry_count := os.getenv("CLAIF_RETRY_COUNT"):
         with contextlib.suppress(ValueError):
             config.retry_config["count"] = int(retry_count)
-            logger.debug(f"Config: retry_config.count set from env to {config.retry_config["count"]}")
+            logger.debug(f"Config: retry_config.count set from env to {config.retry_config['count']}")
 
     if retry_delay := os.getenv("CLAIF_RETRY_DELAY"):
         with contextlib.suppress(ValueError):
             config.retry_config["delay"] = float(retry_delay)
-            logger.debug(f"Config: retry_config.delay set from env to {config.retry_config["delay"]}")
+            logger.debug(f"Config: retry_config.delay set from env to {config.retry_config['delay']}")
 
     if retry_backoff := os.getenv("CLAIF_RETRY_BACKOFF"):
         with contextlib.suppress(ValueError):
             config.retry_config["backoff"] = float(retry_backoff)
-            logger.debug(f"Config: retry_config.backoff set from env to {config.retry_config["backoff"]}")
+            logger.debug(f"Config: retry_config.backoff set from env to {config.retry_config['backoff']}")
 
     return config
 
 
-def save_config(config: Config, path: Optional[str] = None) -> None:
+def save_config(config: Config, path: str | None = None) -> None:
     """
     Saves the current `Config` object to a JSON file.
 
@@ -290,4 +291,4 @@ def save_config(config: Config, path: Optional[str] = None) -> None:
     except Exception as e:
         msg = f"Failed to save configuration to {save_path}: {e}"
         logger.error(msg)
-        raise IOError(msg) from e
+        raise OSError(msg) from e

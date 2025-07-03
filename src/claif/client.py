@@ -8,8 +8,8 @@ auto-installation of missing CLIs, and provider rotation on failure.
 """
 
 import random
-from collections.abc import AsyncIterator
-from typing import Any, Callable, Dict, List, Tuple, Type
+from collections.abc import AsyncIterator, Callable
+from typing import Any, Dict, List, Tuple, Type
 
 from claif.common import ClaifOptions, ClaifTimeoutError, Message, Provider, ProviderError, logger
 from claif.providers import ClaudeProvider, CodexProvider, GeminiProvider
@@ -29,7 +29,7 @@ def _is_cli_missing_error(error: Exception) -> bool:
         True if the error indicates a missing CLI tool, False otherwise.
     """
     error_str: str = str(error).lower()
-    error_indicators: List[str] = [
+    error_indicators: list[str] = [
         "command not found",
         "no such file or directory",
         "is not recognized as an internal or external command",
@@ -45,7 +45,7 @@ def _is_cli_missing_error(error: Exception) -> bool:
     return any(indicator in error_str for indicator in error_indicators)
 
 
-def _get_provider_install_function(provider: Provider) -> Callable[[], Dict[str, Any]] | None:
+def _get_provider_install_function(provider: Provider) -> Callable[[], dict[str, Any]] | None:
     """
     Retrieves the appropriate installation function for a given provider.
 
@@ -62,12 +62,15 @@ def _get_provider_install_function(provider: Provider) -> Callable[[], Dict[str,
     """
     if provider == Provider.CLAUDE:
         from claif_cla.install import install_claude
+
         return install_claude
     if provider == Provider.GEMINI:
         from claif_gem.install import install_gemini
+
         return install_gemini
     if provider == Provider.CODEX:
         from claif_cod.install import install_codex
+
         return install_codex
     return None
 
@@ -85,7 +88,7 @@ class ClaifClient:
         """
         Initializes the ClaifClient by instantiating available providers.
         """
-        self.providers: Dict[Provider, Any] = {
+        self.providers: dict[Provider, Any] = {
             Provider.CLAUDE: ClaudeProvider(),
             Provider.GEMINI: GeminiProvider(),
             Provider.CODEX: CodexProvider(),
@@ -158,11 +161,11 @@ class ClaifClient:
                 logger.debug(f"{provider.value} CLI not found, attempting auto-install...")
 
                 # Get the installation function for the current provider.
-                install_func: Callable[[], Dict[str, Any]] | None = _get_provider_install_function(provider)
+                install_func: Callable[[], dict[str, Any]] | None = _get_provider_install_function(provider)
 
                 if install_func:
                     # Execute the auto-installation.
-                    install_result: Dict[str, Any] = install_func()
+                    install_result: dict[str, Any] = install_func()
 
                     if install_result.get("installed"):
                         logger.debug(f"{provider.value} CLI installed, retrying query...")
@@ -225,7 +228,7 @@ class ClaifClient:
         self,
         prompt: str,
         options: ClaifOptions | None = None,
-    ) -> AsyncIterator[Dict[Provider, List[Message]]]:
+    ) -> AsyncIterator[dict[Provider, list[Message]]]:
         """
         Sends a query to all available LLM providers in parallel.
 
@@ -243,7 +246,7 @@ class ClaifClient:
 
         import asyncio
 
-        async def query_provider(provider: Provider) -> Tuple[Provider, List[Message]]:
+        async def query_provider(provider: Provider) -> tuple[Provider, list[Message]]:
             """
             Internal helper to query a single provider and collect its messages.
             Handles exceptions by returning an empty list of messages for failed providers.
@@ -252,7 +255,7 @@ class ClaifClient:
             provider_options: ClaifOptions = ClaifOptions(**options.__dict__)
             provider_options.provider = provider
 
-            messages: List[Message] = []
+            messages: list[Message] = []
             try:
                 # Query the provider and append all received messages.
                 async for message in self.query(prompt, provider_options):
@@ -265,19 +268,19 @@ class ClaifClient:
             return provider, messages
 
         # Create a list of tasks, one for each provider, to be executed concurrently.
-        tasks: List[asyncio.Task[Tuple[Provider, List[Message]]]] = [
+        tasks: list[asyncio.Task[tuple[Provider, list[Message]]]] = [
             query_provider(provider) for provider in self.providers
         ]
 
         # Run all tasks concurrently and wait for their completion.
-        results: List[Tuple[Provider, List[Message]]] = await asyncio.gather(*tasks)
+        results: list[tuple[Provider, list[Message]]] = await asyncio.gather(*tasks)
 
         # Convert the list of (provider, messages) tuples into a dictionary.
-        provider_messages: Dict[Provider, List[Message]] = dict(results)
+        provider_messages: dict[Provider, list[Message]] = dict(results)
 
         yield provider_messages
 
-    def list_providers(self) -> List[Provider]:
+    def list_providers(self) -> list[Provider]:
         """
         Lists all currently available LLM providers.
 
@@ -315,16 +318,16 @@ class ClaifClient:
 
         # Determine the primary provider from options, or default to CLAUDE.
         primary_provider: Provider = options.provider or Provider.CLAUDE
-        
+
         # Construct the list of providers to try, starting with the primary,
         # followed by all other available providers.
-        providers_to_try: List[Provider] = [primary_provider]
+        providers_to_try: list[Provider] = [primary_provider]
         for provider in self.providers:
             if provider != primary_provider:
                 providers_to_try.append(provider)
 
         last_error: Exception | None = None
-        providers_tried: List[str] = []
+        providers_tried: list[str] = []
 
         # Iterate through the list of providers, attempting the query with each.
         for provider in providers_to_try:
@@ -346,18 +349,16 @@ class ClaifClient:
             except (ProviderError, ClaifTimeoutError, Exception) as e:
                 # Catch specific errors that might warrant rotation.
                 last_error = e
-                logger.warning(
-                    f"Provider {provider.value} failed after retries: {e}. "
-                    f"Rotating to next provider..."
-                )
+                logger.warning(f"Provider {provider.value} failed after retries: {e}. Rotating to next provider...")
 
                 # If this was the last provider in the rotation list and it failed,
                 # then all providers have been exhausted.
                 if provider == providers_to_try[-1]:
                     logger.error(f"All providers failed. Tried: {', '.join(providers_tried)}")
                     # Raise a comprehensive ProviderError indicating the complete failure.
+                    msg = "all"
                     raise ProviderError(
-                        "all",
+                        msg,
                         "All providers failed after retry attempts",
                         {"providers_tried": providers_tried, "last_error": str(last_error)},
                     ) from last_error
@@ -406,7 +407,7 @@ async def query_random(
 async def query_all(
     prompt: str,
     options: ClaifOptions | None = None,
-) -> AsyncIterator[Dict[Provider, List[Message]]]:
+) -> AsyncIterator[dict[Provider, list[Message]]]:
     """
     Convenience function to query all providers in parallel using the default ClaifClient instance.
 
