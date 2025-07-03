@@ -137,7 +137,6 @@ def load_config(config_file: str | None = None) -> Config:
     return load_env_config(config)
 
 
-
 def merge_config(base: Config, overrides: dict[str, Any]) -> Config:
     """
     Recursively merges override settings into a base `Config` object.
