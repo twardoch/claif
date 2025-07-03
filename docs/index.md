@@ -1,3 +1,9 @@
+---
+layout: default
+title: Home
+nav_order: 1
+has_children: true
+---
 # Claif - Command-Line Artificial Intelligence Framework
 
 Welcome to the official documentation for Claif, the Command-Line Artificial Intelligence Framework. Claif provides a unified interface for interacting with various large language models (LLMs) directly from your terminal.

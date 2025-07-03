@@ -1,3 +1,9 @@
+---
+layout: default
+title: Getting Started
+nav_order: 2
+parent: Home
+---
 # Getting Started
 
 This guide will walk you through the process of installing and configuring Claif.
