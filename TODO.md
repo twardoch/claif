@@ -2,6 +2,11 @@
 
 ## HIGH PRIORITY (Required for Stable Release)
 
+### Test Failures to Fix
+- [ ] **Fix test_query_with_params test** - Currently failing in test_cli.py
+- [ ] **Fix test_query_error_handling test** - Currently failing in test_cli.py
+- [ ] **Investigate test_stream_basic** - Test appears to be hanging/incomplete
+
 ### Cross-Platform Reliability
 - [ ] **Test on Windows, macOS, Linux** - Verify all core functionality works across platforms
 - [ ] **Path handling robustness** - Support spaces, Unicode characters, special paths
