@@ -1,8 +1,3 @@
----
-layout: default
-title: Getting Started
----
-
 # Getting Started
 
 This guide will walk you through the process of installing and configuring Claif.

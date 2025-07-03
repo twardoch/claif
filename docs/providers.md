@@ -1,8 +1,3 @@
----
-layout: default
-title: Providers
----
-
 # Provider Packages
 
 Claif uses a modular provider system to support different LLMs. Here are the official provider packages:
