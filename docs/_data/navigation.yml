@@ -3,5 +3,17 @@ main:
     url: /
   - title: Getting Started
     url: /getting-started/
+  - title: Core Framework
+    url: /core/
   - title: Providers
     url: /providers/
+  - title: API Reference
+    url: /api/
+  - title: User Guides
+    url: /guides/
+  - title: Development
+    url: /development/
+  - title: Examples
+    url: /examples/
+  - title: Troubleshooting
+    url: /troubleshooting/

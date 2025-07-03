@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-01-03
 
+### Added
+- **Documentation Subsite Port**: Ported `claif/docs` to use the `just-the-docs` Jekyll theme.
+  - Updated `_config.yml` for theme configuration.
+  - Added YAML frontmatter (`layout`, `title`, `nav_order`, `parent`, `has_children`) to `index.md`, `getting-started.md`, and `providers.md`.
+
 ### Fixed
 - **Import Resolution**: Corrected numerous `ModuleNotFoundError` and `NameError` issues by adjusting import statements from absolute to relative paths across core framework and provider integration modules. This includes `claif/__init__.py`, `claif/common/__init__.py`, `claif/common/config.py`, `claif/common/utils.py`, `claif/cli.py`, `claif/client.py`, `claif/providers/__init__.py`, `claif/providers/gemini.py`, `claif/providers/claude.py`, `claif/providers/codex.py`, and `claif/server.py`.
 - **Gemini Provider Hanging Issue**: Resolved the issue where the Gemini provider would hang indefinitely by refactoring the subprocess communication in `claif_gem/src/claif_gem/transport.py` to use `asyncio.subprocess.communicate()` for more reliable output capture.

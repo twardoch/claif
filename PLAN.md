@@ -79,6 +79,84 @@
 
 **Success Criteria**: Users can install and use without confusion
 
+### Comprehensive Documentation Strategy
+**Timeline**: 2-3 weeks
+**Priority**: HIGH (moved up due to current inadequate docs)
+
+**Current State Analysis**:
+- Existing docs/ folder has only 4 basic files (index.md, getting-started.md, providers.md, _config.yml)
+- Website at https://twardoch.github.io/claif/ is minimal and doesn't reflect the comprehensive codebase
+- Rich codebase with multiple packages (claif, claif_cla, claif_cod, claif_gem) needs proper documentation
+- Many markdown files exist throughout the project but aren't organized in docs/
+
+**Documentation Architecture Requirements**:
+
+1. **Core Framework Documentation** (`docs/core/`)
+   - **Architecture Overview** - Plugin system, provider abstraction, async client
+   - **Provider Interface** - Abstract base classes, plugin discovery, error handling
+   - **Configuration System** - TOML files, environment variables, defaults
+   - **Error Handling** - Error hierarchy, recovery strategies, logging
+   - **Type System** - Message types, options, responses, async patterns
+   - **Testing Framework** - Unit tests, integration tests, mocking strategies
+
+2. **Provider Documentation** (`docs/providers/`)
+   - **Provider Architecture** - How providers integrate with core framework
+   - **Anthropic Claude (claif_cla)** - SDK wrapper, session management, tool approval
+   - **OpenAI Codex (claif_cod)** - Code generation, action modes, project awareness
+   - **Google Gemini (claif_gem)** - CLI subprocess management, context handling
+   - **Custom Providers** - Development guide, plugin registration, best practices
+
+3. **API Reference** (`docs/api/`)
+   - **Core Classes** - Client, Config, Provider base classes
+   - **Common Utilities** - Types, errors, utils, formatters
+   - **CLI Interface** - Fire-based commands, options, examples
+   - **MCP Server** - FastMCP implementation, tool integration
+   - **Installation System** - Auto-install, dependency management
+
+4. **User Guides** (`docs/guides/`)
+   - **Quick Start** - Installation, first query, basic configuration
+   - **Configuration Guide** - API keys, provider settings, advanced options
+   - **CLI Usage** - All commands, options, examples, workflows
+   - **Integration Guide** - Using Claif in scripts, programmatic access
+   - **Migration Guide** - Version changes, breaking changes, upgrading
+
+5. **Developer Documentation** (`docs/development/`)
+   - **Development Setup** - Local development, testing, pre-commit hooks
+   - **Contributing Guide** - Code style, testing requirements, PR process
+   - **Architecture Decisions** - Design patterns, trade-offs, rationale
+   - **Provider Development** - Creating new providers, plugin system
+   - **Release Process** - Versioning, coordination, publishing
+
+6. **Examples and Tutorials** (`docs/examples/`)
+   - **Basic Examples** - Simple queries, provider selection, options
+   - **Advanced Usage** - Complex workflows, error handling, async patterns
+   - **Integration Examples** - Scripts, automation, CI/CD usage
+   - **Provider-Specific** - Claude sessions, Gemini CLI options, Codex modes
+
+7. **Troubleshooting and FAQ** (`docs/troubleshooting/`)
+   - **Common Issues** - Installation problems, configuration errors
+   - **Provider-Specific** - API key issues, CLI tool problems, network errors
+   - **Performance** - Slow queries, timeout handling, optimization
+   - **Debugging** - Logging levels, verbose output, error analysis
+
+**Technical Implementation**:
+- Use Jekyll with GitHub Pages (existing _config.yml structure)
+- Generate API docs from docstrings using automated tools
+- Include code examples that are tested in CI
+- Cross-reference between different documentation sections
+- Search functionality for easy navigation
+- Mobile-responsive design for terminal-focused developers
+
+**Content Sources to Integrate**:
+- Existing CLAUDE.md, GEMINI.md, AGENTS.md files
+- README.md files from all sub-projects
+- CHANGELOG.md files for version history
+- Code docstrings and type hints
+- Test files for usage examples
+- CLI help text and command descriptions
+
+**Success Criteria**: Comprehensive, searchable documentation that covers all aspects of the Claif ecosystem
+
 ### Release Infrastructure
 **Timeline**: 1 week
 **Priority**: MEDIUM
@@ -175,6 +253,9 @@ Explicitly excluding to maintain focus:
 - ❌ **Database backends** or persistence
 - ❌ **Multi-user support**
 - ❌ **UI enhancements** beyond terminal output
+- ❌ **Auto-generated API docs** (manual curation preferred for v1.0)
+- ❌ **Interactive documentation** (focus on static, comprehensive docs)
+- ❌ **Video tutorials** (text-based documentation priority)
 
 ## Timeline & Milestones
 

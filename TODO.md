@@ -29,11 +29,72 @@
 
 ## MEDIUM PRIORITY (Nice to Have for v1.0)
 
-### Documentation Essentials
+### Documentation Essentials (PRIORITY ELEVATED)
 - [ ] **Installation guide** - Clear setup instructions for all platforms
 - [ ] **Basic usage examples** - Core functionality demonstrations
 - [ ] **Troubleshooting section** - Common issues and solutions
 - [ ] **API documentation** - Complete docstrings for public interfaces
+
+### Comprehensive Documentation Overhaul
+- [ ] **Analyze current docs gap** - Current docs/ has only 4 basic files vs rich codebase
+- [ ] **Create documentation architecture** - Organize docs into logical sections
+- [ ] **Set up directory structure** - Create folders for core/, providers/, api/, guides/, etc.
+
+#### Core Framework Documentation (`docs/core/`)
+- [ ] **Architecture overview** - Plugin system, provider abstraction, async patterns
+- [ ] **Provider interface guide** - Abstract base classes, plugin discovery
+- [ ] **Configuration system** - TOML files, environment variables, defaults
+- [ ] **Error handling guide** - Error hierarchy, recovery strategies, logging
+- [ ] **Type system reference** - Message types, options, responses
+- [ ] **Testing framework** - Unit tests, integration tests, mocking
+
+#### Provider Documentation (`docs/providers/`)
+- [ ] **Provider architecture** - How providers integrate with core
+- [ ] **Anthropic Claude (claif_cla)** - SDK wrapper, session management, tools
+- [ ] **OpenAI Codex (claif_cod)** - Code generation, action modes, project awareness
+- [ ] **Google Gemini (claif_gem)** - CLI subprocess management, context handling
+- [ ] **Custom provider development** - Plugin creation guide, best practices
+
+#### API Reference (`docs/api/`)
+- [ ] **Core classes reference** - Client, Config, Provider base classes
+- [ ] **Common utilities** - Types, errors, utils, formatters
+- [ ] **CLI interface** - Fire-based commands, options, examples
+- [ ] **MCP server** - FastMCP implementation, tool integration
+- [ ] **Installation system** - Auto-install, dependency management
+
+#### User Guides (`docs/guides/`)
+- [ ] **Quick start guide** - Installation, first query, basic config
+- [ ] **Configuration guide** - API keys, provider settings, advanced options
+- [ ] **CLI usage guide** - All commands, options, examples, workflows
+- [ ] **Integration guide** - Using Claif in scripts, programmatic access
+- [ ] **Migration guide** - Version changes, breaking changes, upgrading
+
+#### Developer Documentation (`docs/development/`)
+- [ ] **Development setup** - Local development, testing, pre-commit hooks
+- [ ] **Contributing guide** - Code style, testing requirements, PR process
+- [ ] **Architecture decisions** - Design patterns, trade-offs, rationale
+- [ ] **Provider development** - Creating new providers, plugin system
+- [ ] **Release process** - Versioning, coordination, publishing
+
+#### Examples and Tutorials (`docs/examples/`)
+- [ ] **Basic examples** - Simple queries, provider selection, options
+- [ ] **Advanced usage** - Complex workflows, error handling, async patterns
+- [ ] **Integration examples** - Scripts, automation, CI/CD usage
+- [ ] **Provider-specific examples** - Claude sessions, Gemini CLI, Codex modes
+
+#### Troubleshooting (`docs/troubleshooting/`)
+- [ ] **Common issues** - Installation problems, configuration errors
+- [ ] **Provider-specific issues** - API keys, CLI tools, network errors
+- [ ] **Performance troubleshooting** - Slow queries, timeouts, optimization
+- [ ] **Debugging guide** - Logging levels, verbose output, error analysis
+
+#### Technical Implementation
+- [ ] **Enhance Jekyll setup** - Improve _config.yml, navigation structure
+- [ ] **Content integration** - Incorporate existing CLAUDE.md, GEMINI.md, AGENTS.md
+- [ ] **Cross-references** - Link between different documentation sections
+- [ ] **Code examples testing** - Ensure all examples work and are tested in CI
+- [ ] **Search functionality** - Enable easy navigation through docs
+- [ ] **Mobile responsiveness** - Optimize for terminal-focused developers
 
 ### Release Infrastructure
 - [ ] **TestPyPI integration** - Test deployment process
@@ -72,6 +133,9 @@ Explicitly excluding to maintain focus:
 - ❌ **UI enhancements** beyond terminal output
 - ❌ **Provider rotation** or failover logic
 - ❌ **Session persistence** across runs
+- ❌ **Auto-generated API docs** (manual curation preferred for v1.0)
+- ❌ **Interactive documentation** (focus on static, comprehensive docs)
+- ❌ **Video tutorials** (text-based documentation priority)
 
 ## RISK MITIGATION
 
@@ -93,6 +157,15 @@ For each task to be considered complete:
 - [ ] **Error handling** includes clear messages
 - [ ] **Cross-platform** compatibility verified
 - [ ] **Code review** completed (self-review minimum)
+
+For documentation tasks specifically:
+
+- [ ] **Content accuracy** - All information is current and correct
+- [ ] **Code examples** - All examples are tested and work
+- [ ] **Navigation** - Easy to find relevant information
+- [ ] **Completeness** - Covers all major use cases and features
+- [ ] **Clarity** - Written for target audience (users vs developers)
+- [ ] **Cross-references** - Links to related sections work correctly
 
 ## POST-v1.0 ROADMAP
 
