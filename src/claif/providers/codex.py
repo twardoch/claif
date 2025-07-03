@@ -13,9 +13,10 @@ class CodexProvider(BaseProvider):
     """
     Implements the Claif provider interface for OpenAI Codex.
 
-    This class acts as a bridge between the generic Claif client and the
-    `claif_cod` package, which handles the actual communication with the
-    Codex CLI.
+    This class serves as an adapter, translating requests from the generic
+    Claif client into calls compatible with the `claif_cod` package, which
+    in turn interacts with the Codex CLI. It ensures seamless integration
+    of Codex models within the Claif framework.
     """
 
     def __init__(self) -> None:
@@ -32,20 +33,24 @@ class CodexProvider(BaseProvider):
         options: ClaifOptions,
     ) -> AsyncIterator[Message]:
         """
-        Sends a query to the Codex CLI via the `claif_cod` package.
+        Sends a query to the Codex CLI via the `claif_cod` package and yields responses.
 
-        This is the core implementation method for the Codex provider,
-        called by the `BaseProvider`'s `query` method (which handles retries).
+        This method is the concrete implementation of the `_query_impl` abstract method
+        from `BaseProvider`. It is responsible for delegating the prompt and options
+        to the `claif_cod.query` function and asynchronously yielding the `Message`
+        objects received from it. The `BaseProvider` handles retry logic around this method.
 
         Args:
-            prompt: The input prompt for the Codex model.
-            options: `ClaifOptions` containing query parameters.
+            prompt: The input prompt string to be sent to the Codex model.
+            options: An instance of `ClaifOptions` containing various parameters
+                     for the query, such as model, temperature, etc.
 
         Yields:
-            An asynchronous iterator of `Message` objects received from the Codex CLI.
+            Message: A `Message` object representing a chunk of the response from the Codex CLI.
 
         Raises:
-            Any exceptions raised by `claif_cod.query` (e.g., TransportError, ClaifTimeoutError).
+            Any exceptions raised by `claif_cod.query` (e.g., `claif_cod.TransportError`,
+            `claif_cod.ClaifTimeoutError`, or other communication-related errors).
         """
         logger.debug(f"Codex provider received query: {prompt[:50]}...")
 
