@@ -155,7 +155,7 @@ class ClaifClient:
         except Exception as e:
             # Check if the exception indicates a missing CLI tool.
             if _is_cli_missing_error(e):
-                logger.info(f"{provider.value} CLI not found, attempting auto-install...")
+                logger.debug(f"{provider.value} CLI not found, attempting auto-install...")
 
                 # Get the installation function for the current provider.
                 install_func: Callable[[], Dict[str, Any]] | None = _get_provider_install_function(provider)
@@ -165,7 +165,7 @@ class ClaifClient:
                     install_result: Dict[str, Any] = install_func()
 
                     if install_result.get("installed"):
-                        logger.info(f"{provider.value} CLI installed, retrying query...")
+                        logger.debug(f"{provider.value} CLI installed, retrying query...")
 
                         # Recreate the provider instance to ensure it picks up the newly installed CLI.
                         provider_instance = await self._recreate_provider_instance(provider)
