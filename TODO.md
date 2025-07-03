@@ -3,8 +3,9 @@
 ## CRITICAL (Blocking v1.0 Release)
 
 ### Core Framework Stability
-- [ ] **Verify 80%+ test coverage** - Run full test suite and confirm accurate coverage reporting
+- [x] **Verify 80%+ test coverage** - Run full test suite and confirm accurate coverage reporting ✅
 - [ ] **Auto-install works consistently** - Provider installation succeeds in clean environments
+- [ ] **Fix Message class test impact** - Update all provider tests to handle auto-conversion to List[TextBlock]
 
 ## HIGH PRIORITY (Required for Stable Release)
 

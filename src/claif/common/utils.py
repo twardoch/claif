@@ -15,7 +15,44 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from claif.common.types import ContentBlock, Message, ResponseMetrics, TextBlock
-from claif.cli import _print, _print_warning
+from rich.console import Console
+from rich.theme import Theme
+from rich.syntax import Syntax
+
+# Define a custom theme for consistent output styling
+cli_theme = Theme({
+    "info": "dim cyan",
+    "warning": "magenta",
+    "danger": "bold red",
+    "success": "bold green",
+    "debug": "dim white"
+})
+console = Console(theme=cli_theme)
+
+def _print(message: str) -> None:
+    """Prints a general message to the console."""
+    console.print(message)
+
+def _print_error(message: str) -> None:
+    """Prints an error message to the console in red."""
+    console.print(f"[danger]Error:[/danger] {message}")
+
+def _print_success(message: str) -> None:
+    """Prints a success message to the console in green."""
+    console.print(f"[success]Success:[/success] {message}")
+
+def _print_warning(message: str) -> None:
+    """Prints a warning message to the console in yellow/magenta."""
+    console.print(f"[warning]Warning:[/warning] {message}")
+
+def _confirm(message: str) -> bool:
+    """Simple confirmation prompt."""
+    response = input(f"{message} (y/N): ").strip().lower()
+    return response in ("y", "yes")
+
+def _prompt(message: str) -> str:
+    """Simple input prompt."""
+    return input(f"{message}: ").strip()
 
 APP_NAME: str = "com.twardoch.claif"
 

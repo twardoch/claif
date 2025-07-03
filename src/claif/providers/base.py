@@ -68,24 +68,27 @@ class BaseProvider(ABC):
         options: ClaifOptions,
     ) -> AsyncIterator[Message]:
         """
-        Sends a query to the LLM provider with built-in retry logic.
+        Sends a query to the LLM provider with built-in retry logic using `tenacity`.
 
-        This method wraps the `_query_impl` with retry functionality based on
-        the `retry_count` and `retry_delay` specified in `ClaifOptions`.
+        This method wraps the `_query_impl` with robust retry functionality.
+        It leverages `tenacity.AsyncRetrying` to handle transient failures
+        (e.g., network issues, provider-specific errors, timeouts) based on
+        the `retry_count`, `retry_delay`, and `retry_backoff` configured in `ClaifOptions`.
 
         Args:
             prompt: The input prompt for the LLM.
             options: `ClaifOptions` containing query parameters and retry settings.
 
         Yields:
-            An asynchronous iterator of `Message` objects.
+            An asynchronous iterator of `Message` objects received from the LLM.
 
         Raises:
-            ProviderError: If all retry attempts fail due to a provider-specific error.
+            ProviderError: If all retry attempts fail due to a provider-specific error
+                           or if no response is received after a successful query execution.
             ClaifTimeoutError: If all retry attempts fail due to a timeout.
-            ConnectionError: If all retry attempts fail due to a network issue.
-            Exception: For any other unhandled exceptions after all retries.
-        """
+            ConnectionError: If all retry attempts fail due to a network connection issue.
+            Exception: For any other unhandled exceptions that persist after all retries
+                       or are not configured to be retried.
         # If retries are explicitly disabled, execute the query once without retry.
         if options.no_retry or options.retry_count <= 0:
             logger.debug(f"{self.name} provider: Retries disabled, performing single attempt.")
@@ -100,8 +103,6 @@ class BaseProvider(ABC):
             ConnectionError,
             TimeoutError,  # Standard Python TimeoutError
         )
-
-        last_error: Optional[Exception] = None
 
         try:
             # Use AsyncRetrying from tenacity to handle retries.
@@ -137,8 +138,7 @@ class BaseProvider(ABC):
                         return  # Query successful, exit the retry loop.
 
                     except retry_exceptions as e:
-                        # Catch retryable exceptions, store the last error, and re-raise to trigger tenacity.
-                        last_error = e
+                        # Catch retryable exceptions and re-raise to trigger tenacity.
                         logger.warning(
                             f"{self.name} provider: Attempt {attempt.retry_state.attempt_number} failed: {e}"
                         )
@@ -148,14 +148,13 @@ class BaseProvider(ABC):
         except RetryError as e:
             # This block is reached if all retry attempts have been exhausted.
             # The `reraise=True` in AsyncRetrying ensures that `e.__cause__` holds the last exception.
-            final_error: Exception = last_error if last_error else e.__cause__
-            if final_error:
-                # Re-raise the specific error that caused the final failure.
-                raise final_error
+            # We re-raise the original exception that caused the final failure.
+            if e.__cause__ is not None:
+                raise e.__cause__
             else:
-                # Fallback if for some reason final_error is not set (should not happen with reraise=True).
+                # Fallback if for some reason __cause__ is not set (should not happen with reraise=True).
                 raise ProviderError(
                     self.name,
-                    f"All {options.retry_count} retry attempts failed without a specific last error recorded.",
+                    f"All {options.retry_count} retry attempts failed without a specific cause recorded.",
                     {"retry_error_details": str(e)},
                 ) from e
