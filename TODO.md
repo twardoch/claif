@@ -3,9 +3,41 @@
 ## CRITICAL (Blocking v1.0 Release)
 
 ### Core Framework Stability
-- [x] **Verify 80%+ test coverage** - Run full test suite and confirm accurate coverage reporting ✅
+- [ ] **Verify 80%+ test coverage** - Run full test suite and confirm accurate coverage reporting
+  - **Issue**: Many tests failing, coverage likely impacted.
 - [ ] **Auto-install works consistently** - Provider installation succeeds in clean environments
+  - **Issue**: `test_auto_install_on_missing_cli`, `test_auto_install_failure`, `test_no_auto_install_for_other_errors` failing.
 - [ ] **Fix Message class test impact** - Update all provider tests to handle auto-conversion to List[TextBlock]
+  - **Issue**: This was a known issue, and likely contributes to some failures.
+- [ ] **Fix CLI command execution issues**
+  - **Issue**: `test_query_with_params` (query not called), `test_query_error_handling` (error not detected), `test_provider_status` (is_provider_available not called), `test_config_show`, `test_config_set`, `test_config_save` (`Config` object not callable), `test_install_all` (unexpected keyword argument `all`), `test_server_start` (mock call mismatch), `test_session_claude` (`get_provider` attribute error), `test_status_command` (`Table` not called).
+- [ ] **Resolve `AttributeError` in client and server tests**
+  - **Issue**: `test_get_provider_install_function_claude`, `test_get_provider_install_function_gemini`, `test_get_provider_install_function_codex` (`install_` functions not found in `claif.client`).
+  - **Issue**: `test_server_start`, `test_server_main` (`uvicorn`, `fire` attributes not found in `claif.server`).
+- [ ] **Address `async def functions are not natively supported` errors**
+  - **Issue**: Many client and server tests are failing because `pytest-asyncio` or a similar plugin is not correctly configured or installed.
+- [ ] **Fix `NameError` in config tests**
+  - **Issue**: `test_get_config_path_default`, `test_get_config_path_from_env`, `test_get_config_path_creates_directory`, `test_get_default_config`, `test_default_config_immutable` (`get_config_path`, `get_default_config` not defined).
+- [ ] **Correct `AssertionError` in config tests**
+  - **Issue**: `test_provider_config_none_extra` (`extra` is `None` instead of `{}`), `test_config_defaults` (`session_dir` is not `None`), `test_config_none_values` (`providers` is `None`).
+  - **Issue**: `test_load_config_invalid_json` (assertion message mismatch), `test_load_config_invalid_provider` (did not raise expected error).
+  - **Issue**: `test_save_config_permission_error` (test expects `PermissionError` but fails, likely due to assertion logic).
+- [ ] **Resolve `AssertionError` and `TypeError` in install tests**
+  - **Issue**: `test_get_install_dir_windows` (path comparison), `test_ensure_bun_installed_install` (bun not found), `test_find_executable_in_path`, `test_find_executable_in_home`, `test_find_executable_not_found` (path comparison or `InstallError` not caught).
+  - **Issue**: `test_install_provider_pip`, `test_install_provider_pipx`, `test_install_provider_bun`, `test_install_provider_invalid_method`, `test_uninstall_provider_pip`, `test_install_flow_success`, `test_install_flow_failure` (unexpected keyword argument `method` for `install_provider`/`uninstall_provider`).
+- [ ] **Fix `RuntimeError: Could not determine home directory.`**
+  - **Issue**: `test_get_install_location_windows` is failing due to environment setup.
+- [ ] **Correct `AssertionError` in `test_inject_claif_bin_to_path`**
+  - **Issue**: Path comparison issue.
+- [ ] **Address `Failed: DID NOT RAISE <class 'NotImplementedError'>` in `test_open_commands_unsupported`**
+  - **Issue**: Test expects `NotImplementedError` but doesn't receive it.
+- [ ] **Fix provider query tests**
+  - **Issue**: `test_query_mock`, `test_query_error`, `test_query_with_options` for Claude, Gemini, Codex providers are failing due to async issues.
+- [ ] **Fix server query tests**
+  - **Issue**: `test_query_basic`, `test_query_invalid_provider`, `test_query_error_handling`, `test_query_random`, `test_query_random_error`, `test_query_all`, `test_query_all_error`, `test_list_providers`, `test_health_check_single`, `test_health_check_all` are failing due to async issues.
+- [ ] **Fix `test_provider_responses_format`**
+  - **Issue**: Failing due to async issues.
+
 
 ## HIGH PRIORITY (Required for Stable Release)
 
