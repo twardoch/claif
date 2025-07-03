@@ -79,7 +79,7 @@ Explicitly excluding to maintain focus:
 1. **Cross-platform failures** → Use GitHub Actions matrix early
 2. **Provider discovery bugs** → Comprehensive edge case testing
 
-### Medium Risk Items  
+### Medium Risk Items
 1. **Documentation gaps** → Focus on installation and basic usage
 2. **Build/install issues** → Test with fresh environments regularly
 
