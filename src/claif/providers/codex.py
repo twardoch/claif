@@ -3,7 +3,10 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-import claif_cod
+try:
+    import claif_cod
+except ImportError:
+    claif_cod = None
 
 from claif.common import ClaifOptions, Message, logger
 from claif.providers.base import BaseProvider
@@ -52,6 +55,12 @@ class CodexProvider(BaseProvider):
             Any exceptions raised by `claif_cod.query` (e.g., `claif_cod.TransportError`,
             `claif_cod.ClaifTimeoutError`, or other communication-related errors).
         """
+        if claif_cod is None:
+            from claif.common import ProviderError
+
+            msg = "claif_cod package not installed. Install with: pip install claif_cod"
+            raise ProviderError(msg)
+
         logger.debug(f"Codex provider received query: {prompt[:50]}...")
 
         # Delegate the query to the claif_cod package, which handles subprocess communication.

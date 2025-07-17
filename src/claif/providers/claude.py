@@ -3,7 +3,10 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-import claif_cla
+try:
+    import claif_cla
+except ImportError:
+    claif_cla = None
 
 from claif.common import ClaifOptions, Message, logger
 from claif.providers.base import BaseProvider
@@ -52,6 +55,12 @@ class ClaudeProvider(BaseProvider):
             Any exceptions raised by `claif_cla.query` (e.g., `claif_cla.TransportError`,
             `claif_cla.ClaifTimeoutError`, or other communication-related errors).
         """
+        if claif_cla is None:
+            from claif.common import ProviderError
+
+            msg = "claif_cla package not installed. Install with: pip install claif_cla"
+            raise ProviderError(msg)
+
         logger.debug(f"Claude provider received query: {prompt[:50]}...")
 
         # Delegate the query to the claif_cla package, which handles subprocess communication.

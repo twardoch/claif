@@ -3,7 +3,10 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-import claif_gem
+try:
+    import claif_gem
+except ImportError:
+    claif_gem = None
 
 from claif.common import ClaifOptions, Message, logger
 from claif.providers.base import BaseProvider
@@ -52,6 +55,12 @@ class GeminiProvider(BaseProvider):
             Any exceptions raised by `claif_gem.query` (e.g., `claif_gem.TransportError`,
             `claif_gem.ClaifTimeoutError`, or other communication-related errors).
         """
+        if claif_gem is None:
+            from claif.common import ProviderError
+
+            msg = "claif_gem package not installed. Install with: pip install claif_gem"
+            raise ProviderError(msg)
+
         logger.debug(f"Gemini provider received query: {prompt[:50]}...")
 
         # Delegate the query to the claif_gem package, which handles subprocess communication.
