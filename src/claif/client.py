@@ -1,422 +1,177 @@
 # this_file: claif/src/claif/client.py
-"""
-Client implementation for the Claif framework.
+"""Unified Claif client with OpenAI Responses API compatibility."""
 
-This module provides a unified client interface for interacting with various
-Large Language Model (LLM) providers, including functionality for querying,
-auto-installation of missing CLIs, and provider rotation on failure.
-"""
+import os
+from collections.abc import Iterator
+from typing import Any, Literal
 
-import random
-from collections.abc import AsyncIterator, Callable
-from typing import Any, Dict, List, Tuple, Type
-
-from claif.common import ClaifOptions, ClaifTimeoutError, Message, Provider, ProviderError, logger
-from claif.providers import ClaudeProvider, CodexProvider, GeminiProvider
-
-
-def _is_cli_missing_error(error: Exception) -> bool:
-    """
-    Checks if a given exception indicates a missing CLI tool.
-
-    This function inspects the string representation of the error for common
-    phrases that suggest the CLI executable is not found or accessible.
-
-    Args:
-        error: The exception to check.
-
-    Returns:
-        True if the error indicates a missing CLI tool, False otherwise.
-    """
-    error_str: str = str(error).lower()
-    error_indicators: list[str] = [
-        "command not found",
-        "no such file or directory",
-        "is not recognized as an internal or external command",
-        "cannot find",
-        "not found",
-        "executable not found",
-        "permission denied",
-        "filenotfounderror",
-        "claude not found",
-        "gemini not found",
-        "codex not found",
-    ]
-    return any(indicator in error_str for indicator in error_indicators)
-
-
-def _get_provider_install_function(provider: Provider) -> Callable[[], dict[str, Any]] | None:
-    """
-    Retrieves the appropriate installation function for a given provider.
-
-    This function dynamically imports the installation function from the
-    respective provider's `install` module.
-
-    Args:
-        provider: The Provider enum member for which to get the install function.
-
-    Returns:
-        A callable installation function that returns a dictionary with an
-        "installed" key (bool) and a "message" key (str), or None if no
-        installation function is available for the given provider.
-    """
-    if provider == Provider.CLAUDE:
-        from claif_cla.install import install_claude
-
-        return install_claude
-    if provider == Provider.GEMINI:
-        from claif_gem.install import install_gemini
-
-        return install_gemini
-    if provider == Provider.CODEX:
-        from claif_cod.install import install_codex
-
-        return install_codex
-    return None
+from openai import NOT_GIVEN, NotGiven
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessageParam,
+)
 
 
 class ClaifClient:
-    """
-    A unified client for interacting with various LLM providers within the Claif framework.
+    """Unified client for all Claif providers with OpenAI-compatible API."""
 
-    This class abstracts away the complexities of managing different provider
-    APIs and CLIs, offering a consistent interface for sending queries,
-    handling auto-installation, and implementing provider rotation strategies.
-    """
-
-    def __init__(self) -> None:
-        """
-        Initializes the ClaifClient by instantiating available providers.
-        """
-        self.providers: dict[Provider, Any] = {
-            Provider.CLAUDE: ClaudeProvider(),
-            Provider.GEMINI: GeminiProvider(),
-            Provider.CODEX: CodexProvider(),
-        }
-
-    async def _recreate_provider_instance(self, provider: Provider) -> Any:
-        """
-        Recreates a provider instance to clear any cached state after an installation.
-
-        Args:
-            provider: The Provider enum member for which to recreate the instance.
-
-        Returns:
-            The newly created provider instance.
-        """
-        if provider == Provider.CLAUDE:
-            self.providers[provider] = ClaudeProvider()
-        elif provider == Provider.GEMINI:
-            self.providers[provider] = GeminiProvider()
-        elif provider == Provider.CODEX:
-            self.providers[provider] = CodexProvider()
-        return self.providers[provider]
-
-    async def query(
+    def __init__(
         self,
-        prompt: str,
-        options: ClaifOptions | None = None,
-    ) -> AsyncIterator[Message]:
-        """
-        Sends a query to the specified (or default) LLM provider.
-
-        This method includes logic for automatically attempting to install
-        missing CLI tools if a `ProviderError` related to a missing CLI is encountered.
+        provider: Literal["claude", "gemini", "codex", "lms"] | None = None,
+        api_key: str | None = None,
+        **kwargs,
+    ):
+        """Initialize the Claif client with a specific provider or auto-detection.
 
         Args:
-            prompt: The input prompt for the LLM.
-            options: Optional configuration options for the query, including the target provider.
-
-        Yields:
-            An asynchronous iterator of Message objects from the LLM.
-
-        Raises:
-            ProviderError: If the specified provider is unknown or if the query
-                           fails after auto-installation attempts.
-            Exception: For other unexpected errors during the query process.
+            provider: Provider to use (claude, gemini, codex, lms). If None, auto-detects.
+            api_key: API key for the provider (provider-specific env vars used if not set)
+            **kwargs: Additional provider-specific parameters
         """
-        if options is None:
-            options = ClaifOptions()
+        self.provider = provider or self._detect_provider()
+        self._client = None
+        self._kwargs = kwargs
 
-        # Determine the target provider, defaulting to CLAUDE if not specified.
-        provider: Provider = options.provider or Provider.CLAUDE
+        # Initialize the appropriate provider client
+        if self.provider == "claude":
+            from claif_cla.client import ClaudeClient
 
-        # Validate that the selected provider is registered.
-        if provider not in self.providers:
-            raise ProviderError(
-                provider.value,
-                f"Unknown provider: {provider}",
+            self._client = ClaudeClient(api_key=api_key, **kwargs)
+        elif self.provider == "gemini":
+            from claif_gem.client import GeminiClient
+
+            self._client = GeminiClient(api_key=api_key, **kwargs)
+        elif self.provider == "codex":
+            from claif_cod.client import CodexClient
+
+            self._client = CodexClient(**kwargs)  # Codex doesn't use API key
+        elif self.provider == "lms":
+            from claif_lms.client import LMSClient
+
+            self._client = LMSClient(api_key=api_key, **kwargs)
+        else:
+            msg = f"Unknown provider: {self.provider}"
+            raise ValueError(msg)
+
+        # Create a namespace-like structure to match OpenAI client
+        self.chat = self._ChatNamespace(self)
+
+    def _detect_provider(self) -> str:
+        """Auto-detect provider based on environment variables."""
+        if os.getenv("ANTHROPIC_API_KEY"):
+            return "claude"
+        if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+            return "gemini"
+        if os.getenv("OPENAI_API_KEY") and os.getenv("OPENAI_BASE_URL", "").endswith("v1"):
+            return "lms"  # LM Studio uses OpenAI-compatible endpoints
+        if os.getenv("CODEX_CLI_PATH") or self._is_codex_available():
+            return "codex"
+        # Default to LMS as it's most flexible
+        return "lms"
+
+    def _is_codex_available(self) -> bool:
+        """Check if Codex CLI is available."""
+        import shutil
+
+        return shutil.which("codex") is not None
+
+    class _ChatNamespace:
+        """Namespace for chat-related methods to match OpenAI client structure."""
+
+        def __init__(self, parent: "ClaifClient"):
+            self.parent = parent
+            self.completions = self.parent._CompletionsNamespace(parent)
+
+    class _CompletionsNamespace:
+        """Namespace for completions methods to match OpenAI client structure."""
+
+        def __init__(self, parent: "ClaifClient"):
+            self.parent = parent
+
+        def create(
+            self,
+            *,
+            messages: list[ChatCompletionMessageParam],
+            model: str,
+            frequency_penalty: float | None | NotGiven = NOT_GIVEN,
+            function_call: Any | None | NotGiven = NOT_GIVEN,
+            functions: list[Any] | None | NotGiven = NOT_GIVEN,
+            logit_bias: dict[str, int] | None | NotGiven = NOT_GIVEN,
+            logprobs: bool | None | NotGiven = NOT_GIVEN,
+            max_tokens: int | None | NotGiven = NOT_GIVEN,
+            n: int | None | NotGiven = NOT_GIVEN,
+            presence_penalty: float | None | NotGiven = NOT_GIVEN,
+            response_format: Any | None | NotGiven = NOT_GIVEN,
+            seed: int | None | NotGiven = NOT_GIVEN,
+            stop: str | None | list[str] | NotGiven = NOT_GIVEN,
+            stream: bool | None | NotGiven = NOT_GIVEN,
+            temperature: float | None | NotGiven = NOT_GIVEN,
+            tool_choice: Any | None | NotGiven = NOT_GIVEN,
+            tools: list[Any] | None | NotGiven = NOT_GIVEN,
+            top_logprobs: int | None | NotGiven = NOT_GIVEN,
+            top_p: float | None | NotGiven = NOT_GIVEN,
+            user: str | NotGiven = NOT_GIVEN,
+            # Additional parameters
+            extra_headers: Any | None | NotGiven = NOT_GIVEN,
+            extra_query: Any | None | NotGiven = NOT_GIVEN,
+            extra_body: Any | None | NotGiven = NOT_GIVEN,
+            timeout: float | NotGiven = NOT_GIVEN,
+        ) -> ChatCompletion | Iterator[ChatCompletionChunk]:
+            """Create a chat completion using the configured provider.
+
+            This method provides compatibility with OpenAI's chat.completions.create API.
+            """
+            # Delegate to the provider's implementation
+            return self.parent._client.chat.completions.create(
+                messages=messages,
+                model=model,
+                frequency_penalty=frequency_penalty,
+                function_call=function_call,
+                functions=functions,
+                logit_bias=logit_bias,
+                logprobs=logprobs,
+                max_tokens=max_tokens,
+                n=n,
+                presence_penalty=presence_penalty,
+                response_format=response_format,
+                seed=seed,
+                stop=stop,
+                stream=stream,
+                temperature=temperature,
+                tool_choice=tool_choice,
+                tools=tools,
+                top_logprobs=top_logprobs,
+                top_p=top_p,
+                user=user,
+                extra_headers=extra_headers,
+                extra_query=extra_query,
+                extra_body=extra_body,
+                timeout=timeout,
             )
 
-        provider_instance: Any = self.providers[provider]
-        logger.debug(f"Using provider: {provider.value}")
+    # Convenience method for backward compatibility
+    def create(self, **kwargs) -> ChatCompletion:
+        """Create a chat completion (backward compatibility method)."""
+        return self.chat.completions.create(**kwargs)
 
-        try:
-            # Attempt to query the selected provider.
-            async for message in provider_instance.query(prompt, options):
-                yield message
-        except Exception as e:
-            # Check if the exception indicates a missing CLI tool.
-            if _is_cli_missing_error(e):
-                logger.debug(f"{provider.value} CLI not found, attempting auto-install...")
+    # Provider-specific convenience constructors
+    @classmethod
+    def claude(cls, api_key: str | None = None, **kwargs) -> "ClaifClient":
+        """Create a Claif client configured for Claude."""
+        return cls(provider="claude", api_key=api_key, **kwargs)
 
-                # Get the installation function for the current provider.
-                install_func: Callable[[], dict[str, Any]] | None = _get_provider_install_function(provider)
+    @classmethod
+    def gemini(cls, api_key: str | None = None, **kwargs) -> "ClaifClient":
+        """Create a Claif client configured for Gemini."""
+        return cls(provider="gemini", api_key=api_key, **kwargs)
 
-                if install_func:
-                    # Execute the auto-installation.
-                    install_result: dict[str, Any] = install_func()
+    @classmethod
+    def codex(cls, **kwargs) -> "ClaifClient":
+        """Create a Claif client configured for Codex."""
+        return cls(provider="codex", **kwargs)
 
-                    if install_result.get("installed"):
-                        logger.debug(f"{provider.value} CLI installed, retrying query...")
-
-                        # Recreate the provider instance to ensure it picks up the newly installed CLI.
-                        provider_instance = await self._recreate_provider_instance(provider)
-
-                        # Retry the original query after successful installation.
-                        try:
-                            async for message in provider_instance.query(prompt, options):
-                                yield message
-                        except Exception as retry_error:
-                            # If the retry also fails, log the error and re-raise it.
-                            logger.error(f"Query failed even after installing {provider.value} CLI: {retry_error}")
-                            raise retry_error
-                    else:
-                        # If auto-install failed, extract the error message and raise a ProviderError.
-                        error_msg: str = install_result.get("message", "Unknown auto-installation error.")
-                        logger.error(f"Auto-install failed for {provider.value}: {error_msg}")
-                        msg: str = f"{provider.value.title()} CLI not found and auto-install failed: {error_msg}"
-                        raise ProviderError(provider.value, msg) from e
-                else:
-                    # If no installation function is available for the provider, raise an error.
-                    msg: str = f"{provider.value.title()} CLI not found and no auto-install available."
-                    raise ProviderError(provider.value, msg) from e
-            else:
-                # For any other type of exception, re-raise it directly.
-                raise e
-
-    async def query_random(
-        self,
-        prompt: str,
-        options: ClaifOptions | None = None,
-    ) -> AsyncIterator[Message]:
-        """
-        Sends a query to a randomly selected LLM provider.
-
-        Args:
-            prompt: The input prompt for the LLM.
-            options: Optional configuration options for the query. The `provider`
-                     option will be overridden by a random selection.
-
-        Yields:
-            An asynchronous iterator of Message objects from the randomly selected LLM.
-        """
-        if options is None:
-            options = ClaifOptions()
-
-        # Randomly select a provider from the available ones.
-        provider: Provider = random.choice(list(self.providers.keys()))
-        options.provider = provider  # Update options with the selected provider.
-
-        logger.debug(f"Randomly selected provider: {provider.value}")
-
-        # Delegate the query to the main `query` method.
-        async for message in self.query(prompt, options):
-            yield message
-
-    async def query_all(
-        self,
-        prompt: str,
-        options: ClaifOptions | None = None,
-    ) -> AsyncIterator[dict[Provider, list[Message]]]:
-        """
-        Sends a query to all available LLM providers in parallel.
-
-        Args:
-            prompt: The input prompt for the LLM.
-            options: Optional configuration options for the query.
-
-        Yields:
-            An asynchronous iterator yielding a dictionary where keys are Provider
-            enums and values are lists of Message objects received from each provider.
-            If a provider fails, its list of messages will be empty.
-        """
-        if options is None:
-            options = ClaifOptions()
-
-        import asyncio
-
-        async def query_provider(provider: Provider) -> tuple[Provider, list[Message]]:
-            """
-            Internal helper to query a single provider and collect its messages.
-            Handles exceptions by returning an empty list of messages for failed providers.
-            """
-            # Create a copy of options for each provider to avoid interference.
-            provider_options: ClaifOptions = ClaifOptions(**options.__dict__)
-            provider_options.provider = provider
-
-            messages: list[Message] = []
-            try:
-                # Query the provider and append all received messages.
-                async for message in self.query(prompt, provider_options):
-                    messages.append(message)
-            except Exception as e:
-                # Log the error but do not re-raise, allowing parallel execution to continue.
-                logger.error(f"Provider {provider.value} failed during parallel query: {e}")
-                messages = []  # Ensure an empty list is returned on failure.
-
-            return provider, messages
-
-        # Create a list of tasks, one for each provider, to be executed concurrently.
-        tasks: list[asyncio.Task[tuple[Provider, list[Message]]]] = [
-            query_provider(provider) for provider in self.providers
-        ]
-
-        # Run all tasks concurrently and wait for their completion.
-        results: list[tuple[Provider, list[Message]]] = await asyncio.gather(*tasks)
-
-        # Convert the list of (provider, messages) tuples into a dictionary.
-        provider_messages: dict[Provider, list[Message]] = dict(results)
-
-        yield provider_messages
-
-    def list_providers(self) -> list[Provider]:
-        """
-        Lists all currently available LLM providers.
-
-        Returns:
-            A list of Provider enum members.
-        """
-        return list(self.providers.keys())
-
-    async def query_with_rotation(
-        self,
-        prompt: str,
-        options: ClaifOptions | None = None,
-    ) -> AsyncIterator[Message]:
-        """
-        Sends a query to LLM providers with automatic rotation on failures.
-
-        This method attempts to use the primary provider first. If it fails
-        (even after its own internal retries), it rotates through other
-        available providers until a successful response is received or all
-        providers have been exhausted.
-
-        Args:
-            prompt: The input prompt for the LLM.
-            options: Optional configuration options for the query. The `provider`
-                     option, if set, will determine the initial primary provider.
-
-        Yields:
-            An asynchronous iterator of Message objects from the successful LLM.
-
-        Raises:
-            ProviderError: If all providers fail after their respective retry attempts.
-        """
-        if options is None:
-            options = ClaifOptions()
-
-        # Determine the primary provider from options, or default to CLAUDE.
-        primary_provider: Provider = options.provider or Provider.CLAUDE
-
-        # Construct the list of providers to try, starting with the primary,
-        # followed by all other available providers.
-        providers_to_try: list[Provider] = [primary_provider]
-        for provider in self.providers:
-            if provider != primary_provider:
-                providers_to_try.append(provider)
-
-        last_error: Exception | None = None
-        providers_tried: list[str] = []
-
-        # Iterate through the list of providers, attempting the query with each.
-        for provider in providers_to_try:
-            providers_tried.append(provider.value)
-
-            # Create a new options object for the current provider to avoid modifying
-            # the original options object and ensure provider-specific settings.
-            current_options: ClaifOptions = ClaifOptions(**options.__dict__)
-            current_options.provider = provider
-
-            logger.debug(f"Attempting query with provider: {provider.value}")
-
-            try:
-                # Attempt the query using the current provider.
-                async for message in self.query(prompt, current_options):
-                    yield message
-                return  # If successful, exit the function.
-
-            except (ProviderError, ClaifTimeoutError, Exception) as e:
-                # Catch specific errors that might warrant rotation.
-                last_error = e
-                logger.warning(f"Provider {provider.value} failed after retries: {e}. Rotating to next provider...")
-
-                # If this was the last provider in the rotation list and it failed,
-                # then all providers have been exhausted.
-                if provider == providers_to_try[-1]:
-                    logger.error(f"All providers failed. Tried: {', '.join(providers_tried)}")
-                    # Raise a comprehensive ProviderError indicating the complete failure.
-                    msg = "all"
-                    raise ProviderError(
-                        msg,
-                        "All providers failed after retry attempts",
-                        {"providers_tried": providers_tried, "last_error": str(last_error)},
-                    ) from last_error
-
-
-# Module-level client instance for convenience.
-_client: ClaifClient = ClaifClient()
-
-
-async def query(
-    prompt: str,
-    options: ClaifOptions | None = None,
-) -> AsyncIterator[Message]:
-    """
-    Convenience function to query the default ClaifClient instance.
-
-    Args:
-        prompt: The input prompt for the LLM.
-        options: Optional configuration options for the query.
-
-    Yields:
-        An asynchronous iterator of Message objects from the LLM.
-    """
-    async for message in _client.query(prompt, options):
-        yield message
-
-
-async def query_random(
-    prompt: str,
-    options: ClaifOptions | None = None,
-) -> AsyncIterator[Message]:
-    """
-    Convenience function to query a random provider using the default ClaifClient instance.
-
-    Args:
-        prompt: The input prompt for the LLM.
-        options: Optional configuration options for the query.
-
-    Yields:
-        An asynchronous iterator of Message objects from the randomly selected LLM.
-    """
-    async for message in _client.query_random(prompt, options):
-        yield message
-
-
-async def query_all(
-    prompt: str,
-    options: ClaifOptions | None = None,
-) -> AsyncIterator[dict[Provider, list[Message]]]:
-    """
-    Convenience function to query all providers in parallel using the default ClaifClient instance.
-
-    Args:
-        prompt: The input prompt for the LLM.
-        options: Optional configuration options for the query.
-
-    Yields:
-        An asynchronous iterator yielding a dictionary of messages from all providers.
-    """
-    async for results in _client.query_all(prompt, options):
-        yield results
+    @classmethod
+    def lms(cls, api_key: str | None = None, base_url: str | None = None, **kwargs) -> "ClaifClient":
+        """Create a Claif client configured for LM Studio."""
+        return cls(provider="lms", api_key=api_key, base_url=base_url, **kwargs)

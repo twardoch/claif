@@ -1,8 +1,6 @@
 """Tests for claif.cli module."""
 
-import sys
-from io import StringIO
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import fire
 import pytest

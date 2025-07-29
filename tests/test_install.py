@@ -1,10 +1,8 @@
 """Tests for claif.common.install module."""
 
 import os
-import platform
-import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -121,7 +119,6 @@ class TestBunInstallation:
 
     # Commented out tests for undefined functions
     # TODO: Add these back when run_bun_install is implemented
-    pass
 
 
 class TestExecutableFinding:

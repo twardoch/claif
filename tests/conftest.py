@@ -4,8 +4,7 @@ import asyncio
 import sys
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 

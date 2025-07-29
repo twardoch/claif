@@ -1,739 +1,353 @@
-"""Fire-based CLI for unified Claif wrapper."""
+# this_file: claif/src/claif/cli.py
+"""CLI interface for unified Claif with OpenAI-compatible API."""
 
-import asyncio
-import os
-import shutil
 import sys
-import time
 
 import fire
-from rich.columns import Columns
 from rich.console import Console
 from rich.live import Live
+from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.table import Table
+from rich.spinner import Spinner
 
-from claif.client import _client, query, query_all, query_random
-from claif.common import (
-    ClaifOptions,
-    Provider,
-    ResponseMetrics,
-    format_metrics,
-    format_response,
-    load_config,
-    logger,
-    save_config,
-)
-from claif.server import start_mcp_server
+from claif.client import ClaifClient
 
 console = Console()
 
 
-class ClaifCLI:
-    """Unified Claif CLI with Fire interface."""
+class CLI:
+    """Command-line interface for unified Claif."""
 
-    def __init__(self, config_file: str | None = None, verbose: bool = False):
-        """Initialize CLI with optional config file."""
-        logger.remove()
-        log_level = "DEBUG" if verbose else "INFO"
-        logger.add(sys.stderr, level=log_level)
-        self.config = load_config(config_file)
-        if verbose:
-            self.config.verbose = True
-        self.client = _client
-        logger.debug("Initialized Claif CLI")
+    def __init__(
+        self,
+        provider: str | None = None,
+        api_key: str | None = None,
+        **kwargs,
+    ):
+        """Initialize CLI with optional provider selection.
+
+        Args:
+            provider: Provider to use (claude, gemini, codex, lms). Auto-detects if not specified.
+            api_key: API key for the provider
+            **kwargs: Additional provider-specific parameters
+        """
+        try:
+            self._client = ClaifClient(provider=provider, api_key=api_key, **kwargs)
+            self._provider = self._client.provider
+        except Exception as e:
+            console.print(f"[red]Error initializing client: {e}[/red]")
+            sys.exit(1)
 
     def query(
         self,
         prompt: str,
-        provider: str | None = None,
         model: str | None = None,
-        temperature: float | None = None,
-        max_tokens: int | None = None,
+        provider: str | None = None,
+        stream: bool = False,
         system: str | None = None,
-        timeout: int | None = None,
-        output_format: str = "text",
-        show_metrics: bool = False,
-        cache: bool = True,
-        no_retry: bool = False,
-        rotate_providers: bool = False,
-    ) -> None:
-        """Execute a query to specified provider.
+        json_output: bool = False,
+    ):
+        """Query the AI provider with a prompt.
 
         Args:
-            prompt: The prompt to send
-            provider: Provider to use (claude, gemini, codex)
-            model: Model to use (provider-specific)
-            temperature: Sampling temperature (0-1)
-            max_tokens: Maximum tokens in response
-            system: System prompt
-            timeout: Timeout in seconds
-            output_format: Output format (text, json, markdown)
-            show_metrics: Show response metrics
-            cache: Enable response caching
-            no_retry: Disable retry logic (single attempt only)
-            rotate_providers: Enable provider rotation on failures
+            prompt: The user prompt to send
+            model: Model name to use (provider-specific)
+            provider: Override the default provider for this query
+            stream: Whether to stream the response
+            system: Optional system message
+            json_output: Output raw JSON instead of formatted text
         """
-        # Parse provider
-        provider_enum = None
-        if provider:
+        # If provider is specified for this query, create a new client
+        if provider and provider != self._provider:
             try:
-                provider_enum = Provider(provider.lower())
-            except ValueError:
-                console.print(f"[red]Unknown provider: {provider}[/red]")
-                console.print(f"Available providers: {', '.join(p.value for p in Provider)}")
-                sys.exit(1)
+                client = ClaifClient(provider=provider)
+            except Exception as e:
+                console.print(f"[red]Error switching provider: {e}[/red]")
+                return
+        else:
+            client = self._client
 
-        options = ClaifOptions(
-            provider=provider_enum or self.config.default_provider,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            system_prompt=system,
-            timeout=timeout,
-            output_format=output_format,
-            cache=cache,
-            verbose=self.config.verbose,
-            retry_count=0 if no_retry else 3,
-            retry_delay=1.0,
-        )
+        # Use default model if not specified
+        if not model:
+            model = self._get_default_model(client.provider)
 
-        start_time = time.time()
+        # Build messages
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
 
         try:
-            # Run async query with optional provider rotation
-            if rotate_providers:
-                messages = asyncio.run(self._query_async_with_rotation(prompt, options))
+            if stream:
+                self._stream_response(client, messages, model, json_output)
             else:
-                messages = asyncio.run(self._query_async(prompt, options))
+                self._sync_response(client, messages, model, json_output)
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            sys.exit(1)
 
-            # Format and display response
-            for message in messages:
-                formatted = format_response(message, output_format)
-                console.print(formatted)
+    def _get_default_model(self, provider: str) -> str:
+        """Get default model for a provider."""
+        defaults = {
+            "claude": "claude-3-5-sonnet-20241022",
+            "gemini": "gemini-1.5-flash",
+            "codex": "gpt-4o",
+            "lms": "gpt-3.5-turbo",
+        }
+        return defaults.get(provider, "gpt-3.5-turbo")
 
-            # Show metrics if requested
-            if show_metrics:
-                duration = time.time() - start_time
-                metrics = ResponseMetrics(
-                    duration=duration,
-                    provider=options.provider,
-                    model=model or "default",
+    def _sync_response(self, client: ClaifClient, messages: list, model: str, json_output: bool):
+        """Handle synchronous response."""
+        provider_name = client.provider.capitalize()
+        with console.status(f"[bold green]Querying {provider_name}...", spinner="dots"):
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+
+        if json_output:
+            console.print_json(response.model_dump_json(indent=2))
+        else:
+            content = response.choices[0].message.content
+            console.print(
+                Panel(
+                    Markdown(content),
+                    title=f"[bold blue]{provider_name} Response[/bold blue] (Model: {response.model})",
+                    border_style="blue",
                 )
-                console.print("\n" + format_metrics(metrics))
+            )
 
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
-            if self.config.verbose:
-                console.print_exception()
-            sys.exit(1)
+    def _stream_response(self, client: ClaifClient, messages: list, model: str, json_output: bool):
+        """Handle streaming response."""
+        provider_name = client.provider.capitalize()
 
-    async def _query_async(self, prompt: str, options: ClaifOptions) -> list:
-        """Execute async query and collect messages."""
-        messages = []
-        async for message in query(prompt, options):
-            messages.append(message)
-        return messages
+        if json_output:
+            # Stream JSON chunks
+            for chunk in client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+            ):
+                console.print_json(chunk.model_dump_json())
+        else:
+            # Stream formatted text
+            content = ""
+            with Live(
+                Panel(
+                    Spinner("dots", text="Waiting for response..."),
+                    title=f"[bold blue]{provider_name} Response[/bold blue]",
+                    border_style="blue",
+                ),
+                refresh_per_second=10,
+                console=console,
+            ) as live:
+                for chunk in client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    stream=True,
+                ):
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        content += chunk.choices[0].delta.content
+                        live.update(
+                            Panel(
+                                Markdown(content),
+                                title=f"[bold blue]{provider_name} Response[/bold blue] (Model: {model})",
+                                border_style="blue",
+                            )
+                        )
 
-    async def _query_async_with_rotation(self, prompt: str, options: ClaifOptions) -> list:
-        """Execute async query with provider rotation and collect messages."""
-        messages = []
-        async for message in self.client.query_with_rotation(prompt, options):
-            messages.append(message)
-        return messages
-
-    def stream(
+    def chat(
         self,
-        prompt: str,
+        model: str | None = None,
         provider: str | None = None,
-        model: str | None = None,
-        temperature: float | None = None,
         system: str | None = None,
-    ) -> None:
-        """Stream responses with live display.
+    ):
+        """Start an interactive chat session.
 
         Args:
-            prompt: The prompt to send
-            provider: Provider to use
-            model: Model to use
-            temperature: Sampling temperature (0-1)
-            system: System prompt
+            model: Model name to use
+            provider: Provider to use for the chat
+            system: Optional system message
         """
-        # Parse provider
-        provider_enum = None
-        if provider:
+        # Handle provider switching
+        if provider and provider != self._provider:
             try:
-                provider_enum = Provider(provider.lower())
-            except ValueError:
-                console.print(f"[red]Unknown provider: {provider}[/red]")
-                sys.exit(1)
+                client = ClaifClient(provider=provider)
+            except Exception as e:
+                console.print(f"[red]Error switching provider: {e}[/red]")
+                return
+        else:
+            client = self._client
 
-        options = ClaifOptions(
-            provider=provider_enum or self.config.default_provider,
-            model=model,
-            temperature=temperature,
-            system_prompt=system,
-            verbose=self.config.verbose,
+        provider_name = client.provider.capitalize()
+        model = model or self._get_default_model(client.provider)
+
+        console.print(
+            Panel(
+                f"[bold green]{provider_name} Interactive Chat[/bold green]\n"
+                f"Model: {model}\n"
+                "Type 'exit' or 'quit' to end the session.",
+                border_style="green",
+            )
         )
 
-        try:
-            asyncio.run(self._stream_async(prompt, options))
-        except KeyboardInterrupt:
-            console.print("\n[yellow]Stream interrupted[/yellow]")
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
-            if self.config.verbose:
-                console.print_exception()
-            sys.exit(1)
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
 
-    async def _stream_async(self, prompt: str, options: ClaifOptions) -> None:
-        """Stream responses with live display."""
-        content_buffer = []
+        while True:
+            # Get user input
+            try:
+                user_input = console.input("\n[bold cyan]You:[/bold cyan] ")
+            except (EOFError, KeyboardInterrupt):
+                break
 
-        provider_name = options.provider.value if options.provider else "default"
+            if user_input.lower() in ["exit", "quit"]:
+                break
 
-        with Live(console=console, refresh_per_second=10) as live:
-            live.update(f"[dim]Streaming from {provider_name}...[/dim]")
+            # Add user message
+            messages.append({"role": "user", "content": user_input})
 
-            async for message in query(prompt, options):
-                # Update live display
-                if isinstance(message.content, str):
-                    content_buffer.append(message.content)
-                elif isinstance(message.content, list):
-                    for block in message.content:
-                        if hasattr(block, "text"):
-                            content_buffer.append(block.text)
+            # Get assistant response
+            console.print(f"\n[bold magenta]{provider_name}:[/bold magenta] ", end="")
 
-                live.update("".join(content_buffer))
+            try:
+                content = ""
+                for chunk in client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    stream=True,
+                ):
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        chunk_content = chunk.choices[0].delta.content
+                        content += chunk_content
+                        console.print(chunk_content, end="")
 
-    def random(
-        self,
-        prompt: str,
-        model: str | None = None,
-        temperature: float | None = None,
-        system: str | None = None,
-    ) -> None:
-        """Query a random provider.
+                # Add assistant message to history
+                messages.append({"role": "assistant", "content": content})
+                console.print()  # New line after response
 
-        Args:
-            prompt: The prompt to send
-            model: Model to use (if supported by selected provider)
-            temperature: Sampling temperature (0-1)
-            system: System prompt
-        """
-        options = ClaifOptions(
-            model=model,
-            temperature=temperature,
-            system_prompt=system,
-            verbose=self.config.verbose,
-        )
+            except Exception as e:
+                console.print(f"\n[red]Error: {e}[/red]")
+                # Remove the user message if we failed to get a response
+                messages.pop()
 
-        try:
-            # Track which provider was used
-            selected_provider = None
+        console.print("\n[green]Chat session ended.[/green]")
 
-            async def track_provider():
-                messages = []
-                async for message in query_random(prompt, options):
-                    messages.append(message)
-                # Get provider from options after random selection
-                nonlocal selected_provider
-                selected_provider = options.provider
-                return messages
-
-            messages = asyncio.run(track_provider())
-
-            if selected_provider:
-                logger.debug(f"Selected provider: {selected_provider.value}")
-
-            for message in messages:
-                console.print(format_response(message))
-
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
-            if self.config.verbose:
-                console.print_exception()
-            sys.exit(1)
-
-    def parallel(
-        self,
-        prompt: str,
-        model: str | None = None,
-        temperature: float | None = None,
-        system: str | None = None,
-        compare: bool = False,
-    ) -> None:
-        """Query all providers in parallel.
+    def providers(self, json_output: bool = False):
+        """List available providers and their status.
 
         Args:
-            prompt: The prompt to send
-            model: Model to use (provider-specific defaults apply)
-            temperature: Sampling temperature (0-1)
-            system: System prompt
-            compare: Show responses side-by-side for comparison
+            json_output: Output as JSON instead of formatted table
         """
-        options = ClaifOptions(
-            model=model,
-            temperature=temperature,
-            system_prompt=system,
-            verbose=self.config.verbose,
-        )
+        providers = [
+            {
+                "id": "claude",
+                "name": "Anthropic Claude",
+                "available": self._check_provider("claude"),
+                "env_var": "ANTHROPIC_API_KEY",
+            },
+            {
+                "id": "gemini",
+                "name": "Google Gemini",
+                "available": self._check_provider("gemini"),
+                "env_var": "GEMINI_API_KEY or GOOGLE_API_KEY",
+            },
+            {
+                "id": "codex",
+                "name": "OpenAI Codex CLI",
+                "available": self._check_provider("codex"),
+                "env_var": "N/A (CLI-based)",
+            },
+            {
+                "id": "lms",
+                "name": "LM Studio",
+                "available": self._check_provider("lms"),
+                "env_var": "OPENAI_API_KEY + OPENAI_BASE_URL",
+            },
+        ]
 
+        if json_output:
+            console.print_json(data=providers)
+        else:
+            from rich.table import Table
+
+            table = Table(title="Available Providers")
+            table.add_column("ID", style="cyan")
+            table.add_column("Name", style="green")
+            table.add_column("Available", style="yellow")
+            table.add_column("Environment Variable", style="blue")
+
+            for provider in providers:
+                available = "✓" if provider["available"] else "✗"
+                table.add_row(provider["id"], provider["name"], available, provider["env_var"])
+
+            console.print(table)
+            console.print(f"\n[bold]Current provider:[/bold] {self._provider}")
+
+    def _check_provider(self, provider: str) -> bool:
+        """Check if a provider is available."""
         try:
-            results = asyncio.run(self._parallel_query(prompt, options))
+            ClaifClient(provider=provider)
+            return True
+        except:
+            return False
 
-            if compare:
-                # Show side-by-side comparison
-                panels = []
-                for provider, messages in results.items():
-                    content = (
-                        "\n".join(format_response(msg) for msg in messages) if messages else "[dim]No response[/dim]"
-                    )
-
-                    panel = Panel(
-                        content,
-                        title=f"[bold]{provider.value}[/bold]",
-                        border_style="cyan" if messages else "red",
-                    )
-                    panels.append(panel)
-
-                console.print(Columns(panels, equal=True, expand=True))
-            else:
-                # Show responses sequentially
-                for provider, messages in results.items():
-                    console.print(f"\n[bold cyan]{provider.value}:[/bold cyan]")
-
-                    if messages:
-                        for message in messages:
-                            console.print(format_response(message))
-                    else:
-                        console.print("[dim]No response or error occurred[/dim]")
-
-                    console.print("-" * 50)
-
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
-            if self.config.verbose:
-                console.print_exception()
-            sys.exit(1)
-
-    async def _parallel_query(self, prompt: str, options: ClaifOptions) -> dict:
-        """Execute parallel queries."""
-        async for results in query_all(prompt, options):
-            return results
-        return None
-
-    def providers(self, action: str = "list") -> None:
-        """Manage providers.
+    def models(self, provider: str | None = None, json_output: bool = False):
+        """List available models for a provider.
 
         Args:
-            action: Action to perform (list, status)
+            provider: Provider to list models for (uses current if not specified)
+            json_output: Output as JSON instead of formatted table
         """
-        if action == "list":
-            console.print("[bold]Available Providers:[/bold]")
+        provider = provider or self._provider
 
-            table = Table(show_header=True, header_style="bold cyan")
-            table.add_column("Provider", style="green")
-            table.add_column("Status")
-            table.add_column("Default Model")
+        model_info = {
+            "claude": [
+                {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "context": "200K"},
+                {"id": "claude-3-opus-20240229", "name": "Claude 3 Opus", "context": "200K"},
+                {"id": "claude-3-haiku-20240307", "name": "Claude 3 Haiku", "context": "200K"},
+            ],
+            "gemini": [
+                {"id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro", "context": "2M"},
+                {"id": "gemini-1.5-flash", "name": "Gemini 1.5 Flash", "context": "1M"},
+                {"id": "gemini-2.0-flash-exp", "name": "Gemini 2.0 Flash", "context": "1M"},
+            ],
+            "codex": [
+                {"id": "gpt-4o", "name": "GPT-4o", "context": "128K"},
+                {"id": "o1-preview", "name": "O1 Preview", "context": "128K"},
+                {"id": "o3", "name": "O3", "context": "N/A"},
+            ],
+            "lms": [
+                {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo", "context": "16K"},
+                {"id": "gpt-4", "name": "GPT-4", "context": "128K"},
+                {"id": "custom", "name": "Custom Model", "context": "Varies"},
+            ],
+        }
 
-            for provider in Provider:
-                provider_config = self.config.providers.get(provider.value, {})
+        models = model_info.get(provider, [])
 
-                if hasattr(provider_config, "enabled"):
-                    enabled = provider_config.enabled
-                    model = provider_config.model or "default"
-                else:
-                    enabled = provider_config.get("enabled", True)
-                    model = provider_config.get("model", "default")
+        if json_output:
+            console.print_json(data=models)
+        else:
+            from rich.table import Table
 
-                status = "[green]Enabled[/green]" if enabled else "[red]Disabled[/red]"
+            table = Table(title=f"Available Models for {provider.capitalize()}")
+            table.add_column("Model ID", style="cyan")
+            table.add_column("Name", style="green")
+            table.add_column("Context Window", style="yellow")
 
-                # Mark default provider
-                if provider == self.config.default_provider:
-                    status += " [yellow](default)[/yellow]"
-
-                table.add_row(provider.value, status, model)
+            for model in models:
+                table.add_row(model["id"], model["name"], model["context"])
 
             console.print(table)
 
-        elif action == "status":
-            # Check health of each provider
-            console.print("[bold]Provider Health Check:[/bold]")
-
-            async def check_provider(provider: Provider) -> tuple[Provider, bool]:
-                try:
-                    options = ClaifOptions(
-                        provider=provider,
-                        max_tokens=10,
-                        timeout=5,
-                    )
-                    message_count = 0
-                    async for _ in query("Hello", options):
-                        message_count += 1
-                        break
-                    return provider, message_count > 0
-                except Exception:
-                    return provider, False
-
-            async def check_all():
-                tasks = [check_provider(p) for p in Provider]
-                return await asyncio.gather(*tasks)
-
-            results = asyncio.run(check_all())
-
-            for provider, healthy in results:
-                status = "[green]✓ Healthy[/green]" if healthy else "[red]✗ Unhealthy[/red]"
-                console.print(f"  {provider.value}: {status}")
-
-        else:
-            console.print(f"[red]Unknown action: {action}[/red]")
-            console.print("Available actions: list, status")
-
-    def server(
-        self,
-        host: str = "localhost",
-        port: int = 8000,
-        reload: bool = False,
-    ) -> None:
-        """Start the FastMCP server.
-
-        Args:
-            host: Host to bind to
-            port: Port to bind to
-            reload: Enable auto-reload for development
-        """
-        console.print("[bold]Starting Claif MCP Server[/bold]")
-        console.print(f"Host: {host}")
-        console.print(f"Port: {port}")
-        console.print(f"Reload: {reload}")
-        console.print("\n[yellow]Press Ctrl+C to stop[/yellow]")
-
-        try:
-            start_mcp_server(host, port, reload, self.config)
-        except KeyboardInterrupt:
-            console.print("\n[yellow]Server stopped[/yellow]")
-        except Exception as e:
-            console.print(f"[red]Server error: {e}[/red]")
-            sys.exit(1)
-
-    def config(self, action: str = "show", **kwargs) -> None:
-        """Manage Claif configuration.
-
-        Args:
-            action: Action to perform (show, set, save)
-            **kwargs: Configuration values for 'set' action
-        """
-        if action == "show":
-            console.print("[bold]Claif Configuration:[/bold]")
-            logger.debug(f"Displaying config: {self.config}")
-            console.print(f"  Default Provider: {self.config.default_provider.value}")
-            console.print(f"  Cache Enabled: {self.config.cache_enabled}")
-            console.print(f"  Cache TTL: {self.config.cache_ttl}s")
-            console.print(f"  Session Directory: {self.config.session_dir}")
-            console.print(f"  Verbose: {self.config.verbose}")
-            console.print(f"  Output Format: {self.config.output_format}")
-
-            console.print("\n[bold]Provider Settings:[/bold]")
-            for provider_name, provider_config in self.config.providers.items():
-                console.print(f"\n  {provider_name}:")
-                if hasattr(provider_config, "__dict__"):
-                    for key, value in provider_config.__dict__.items():
-                        if key != "extra":
-                            console.print(f"    {key}: {value}")
-
-        elif action == "set":
-            if not kwargs:
-                console.print("[red]No configuration values provided[/red]")
-                return
-
-            logger.debug(f"Updating config with: {kwargs}")
-            # Update configuration
-            for key, value in kwargs.items():
-                if key == "default_provider":
-                    try:
-                        self.config.default_provider = Provider(value.lower())
-                        console.print(f"[green]Set default provider: {value}[/green]")
-                    except ValueError:
-                        console.print(f"[red]Invalid provider: {value}[/red]")
-                elif hasattr(self.config, key):
-                    setattr(self.config, key, value)
-                    console.print(f"[green]Set {key}: {value}[/green]")
-                else:
-                    console.print(f"[yellow]Unknown setting: {key}[/yellow]")
-
-        elif action == "save":
-            path = kwargs.get("path")
-            save_config(self.config, path)
-            saved_path = path or "~/.claif/config.json"
-            logger.info(f"Configuration saved to: {saved_path}")
-            console.print(f"[green]Configuration saved to: {saved_path}[/green]")
-
-        else:
-            console.print(f"[red]Unknown action: {action}[/red]")
-            console.print("Available actions: show, set, save")
-
-    def session(self, provider: str, *args, **kwargs) -> None:
-        """Start a provider-specific session.
-
-        Args:
-            provider: Provider to use (claude, gemini, codex)
-            *args: Arguments to pass to provider CLI
-            **kwargs: Keyword arguments to pass to provider CLI
-        """
-        # Import the appropriate CLI module
-        if provider == "claude":
-            from claif_cla.cli import ClaudeCLI
-
-            cli = ClaudeCLI(verbose=self.config.verbose)
-        elif provider == "gemini":
-            from claif_gem.cli import GeminiCLI
-
-            cli = GeminiCLI(verbose=self.config.verbose)
-        elif provider == "codex":
-            from claif_cod.cli import CodexCLI
-
-            cli = CodexCLI(verbose=self.config.verbose)
-        else:
-            console.print(f"[red]Unknown provider: {provider}[/red]")
-            console.print("Available providers: claude, gemini, codex")
-            return
-
-        # Start interactive session
-        console.print(f"[bold]Starting {provider} session...[/bold]")
-
-        # If the provider CLI has an interactive method, use it
-        if hasattr(cli, "interactive"):
-            cli.interactive()
-        else:
-            logger.warning(f"Interactive mode not available for {provider}")
-            console.print(f"[yellow]Interactive mode not available for {provider}[/yellow]")
-
-    def install(self, providers: str = "all") -> None:
-        """Install Claif provider packages and bundle them.
-
-        Args:
-            providers: Comma-separated list of providers or 'all' (default)
-                      Options: claude, gemini, codex, all
-        """
-        from claif.install import install_all_tools
-
-        if providers.lower() == "all":
-            console.print("[bold]Installing all providers: claude, gemini, codex[/bold]\n")
-
-            results = install_all_tools()
-
-            # Display results
-            if results["installed"]:
-                console.print(f"[green]✅ Installed: {', '.join(results['installed'])}[/green]")
-            if results["failed"]:
-                console.print(f"[red]❌ Failed: {', '.join(results['failed'])}[/red]")
-
-            if results["failed"]:
-                console.print("\n[yellow]Some installations failed. You can retry with:[/yellow]")
-                console.print(f"[yellow]claif install {','.join(results['failed'])}[/yellow]")
-            else:
-                console.print("\n[green]🎉 All providers installed successfully![/green]")
-                console.print("[green]You can now use 'claude', 'gemini', and 'codex' commands[/green]")
-        else:
-            # For specific providers, use individual install modules
-            to_install = [p.strip() for p in providers.split(",")]
-            valid_providers = ["claude", "gemini", "codex"]
-
-            # Validate provider names
-            invalid = [p for p in to_install if p not in valid_providers]
-            if invalid:
-                console.print(f"[red]Invalid providers: {', '.join(invalid)}[/red]")
-                console.print(f"Available: {', '.join(valid_providers)}")
-                return
-
-            console.print(f"[bold]Installing providers: {', '.join(to_install)}[/bold]\n")
-
-            failed = []
-            succeeded = []
-
-            for provider in to_install:
-                console.print(f"\n[bold cyan]Installing {provider}...[/bold cyan]")
-
-                try:
-                    if provider == "claude":
-                        from claif_cla.install import install_claude
-
-                        result = install_claude()
-                    elif provider == "gemini":
-                        from claif_gem.install import install_gemini
-
-                        result = install_gemini()
-                    elif provider == "codex":
-                        from claif_cod.install import install_codex
-
-                        result = install_codex()
-
-                    if result["installed"]:
-                        succeeded.extend(result["installed"])
-                    if result["failed"]:
-                        failed.extend(result["failed"])
-
-                except Exception as e:
-                    console.print(f"[red]Error installing {provider}: {e}[/red]")
-                    failed.append(provider)
-
-            # Summary
-            console.print("\n[bold]Installation Summary:[/bold]")
-            if succeeded:
-                console.print(f"[green]✅ Succeeded: {', '.join(succeeded)}[/green]")
-            if failed:
-                console.print(f"[red]❌ Failed: {', '.join(failed)}[/red]")
-
-            if failed:
-                console.print("\n[yellow]Some installations failed. You can retry with:[/yellow]")
-                console.print(f"[yellow]claif install {','.join(failed)}[/yellow]")
-            else:
-                console.print("\n[green]🎉 All providers installed successfully![/green]")
-
-    def uninstall(self, providers: str = "all") -> None:
-        """Uninstall Claif provider executables.
-
-        Args:
-            providers: Comma-separated list of providers or 'all' (default)
-                      Options: claude, gemini, codex, all
-        """
-        from claif.install import uninstall_all_tools
-
-        if providers.lower() == "all":
-            console.print("[bold]Uninstalling all providers: claude, gemini, codex[/bold]\n")
-
-            results = uninstall_all_tools()
-
-            # Display results
-            if results["uninstalled"]:
-                console.print(f"[green]✅ Uninstalled: {', '.join(results['uninstalled'])}[/green]")
-            if results["failed"]:
-                console.print(f"[red]❌ Failed: {', '.join(results['failed'])}[/red]")
-
-            if results["uninstalled"]:
-                console.print("\n[green]🗑️ All providers uninstalled successfully![/green]")
-        else:
-            # For specific providers, use individual uninstall modules
-            to_uninstall = [p.strip() for p in providers.split(",")]
-            valid_providers = ["claude", "gemini", "codex"]
-
-            # Validate provider names
-            invalid = [p for p in to_uninstall if p not in valid_providers]
-            if invalid:
-                console.print(f"[red]Invalid providers: {', '.join(invalid)}[/red]")
-                console.print(f"Available: {', '.join(valid_providers)}")
-                return
-
-            console.print(f"[bold]Uninstalling providers: {', '.join(to_uninstall)}[/bold]\n")
-
-            failed = []
-            succeeded = []
-
-            for provider in to_uninstall:
-                console.print(f"\n[bold cyan]Uninstalling {provider}...[/bold cyan]")
-
-                try:
-                    if provider == "claude":
-                        from claif_cla.install import uninstall_claude
-
-                        result = uninstall_claude()
-                    elif provider == "gemini":
-                        from claif_gem.install import uninstall_gemini
-
-                        result = uninstall_gemini()
-                    elif provider == "codex":
-                        from claif_cod.install import uninstall_codex
-
-                        result = uninstall_codex()
-
-                    if result["uninstalled"]:
-                        succeeded.extend(result["uninstalled"])
-                    if result["failed"]:
-                        failed.extend(result["failed"])
-
-                except Exception as e:
-                    console.print(f"[red]Error uninstalling {provider}: {e}[/red]")
-                    failed.append(provider)
-
-            # Summary
-            console.print("\n[bold]Uninstallation Summary:[/bold]")
-            if succeeded:
-                console.print(f"[green]✅ Succeeded: {', '.join(succeeded)}[/green]")
-            if failed:
-                console.print(f"[red]❌ Failed: {', '.join(failed)}[/red]")
-
-            if succeeded:
-                console.print("\n[green]🗑️ Providers uninstalled successfully![/green]")
-
-    def status(self) -> None:
-        """Show installation status for all Claif providers."""
-        from claif.install import get_install_location
-
-        console.print("[bold]Claif Provider Status[/bold]\n")
-
-        # Show install directory
-        install_dir = get_install_location()
-        console.print(f"[bold]Install Directory:[/bold] {install_dir}")
-
-        # Check if install dir is in PATH
-        path_env = os.environ.get("PATH", "")
-        if str(install_dir) in path_env:
-            console.print("[green]✅ Install directory is in PATH[/green]")
-        else:
-            console.print("[yellow]⚠️ Install directory not in PATH[/yellow]")
-            console.print(f'[yellow]   Add to PATH: export PATH="{install_dir}:$PATH"[/yellow]')
-
-        console.print()
-
-        # Check each provider
-        providers = ["claude", "gemini", "codex"]
-        for provider in providers:
-            console.print(f"[bold]{provider.title()} Provider:[/bold]")
-
-            try:
-                if provider == "claude":
-                    from claif_cla.install import get_claude_status
-
-                    status = get_claude_status()
-                elif provider == "gemini":
-                    from claif_gem.install import get_gemini_status
-
-                    status = get_gemini_status()
-                elif provider == "codex":
-                    from claif_cod.install import get_codex_status
-
-                    status = get_codex_status()
-
-                if status["installed"]:
-                    console.print(f"  [green]✅ Installed: {status['path']} ({status['type']})[/green]")
-                else:
-                    console.print("  [yellow]⚪ Not installed[/yellow]")
-
-            except Exception as e:
-                console.print(f"  [red]❌ Error checking status: {e}[/red]")
-
-            # Check if command is available
-            try:
-                if shutil.which(provider):
-                    console.print(f"  [green]✅ Command '{provider}' available in PATH[/green]")
-                else:
-                    console.print(f"  [yellow]⚪ Command '{provider}' not in PATH[/yellow]")
-            except Exception:
-                console.print("  [red]❌ Error checking command availability[/red]")
-
-            console.print()
-
-        # Show helpful commands
-        console.print("[bold]Helpful Commands:[/bold]")
-        console.print("  [cyan]claif install[/cyan] - Install all providers")
-        console.print("  [cyan]claif install claude[/cyan] - Install specific provider")
-        console.print("  [cyan]claif uninstall[/cyan] - Uninstall all providers")
-        console.print("  [cyan]claif_cla install[/cyan] - Install Claude only")
-        console.print("  [cyan]claif_gem install[/cyan] - Install Gemini only")
-        console.print("  [cyan]claif_cod install[/cyan] - Install Codex only")
+    def version(self):
+        """Show version information."""
+        console.print("claif version 1.0.0")
+        console.print(f"Current provider: {self._provider}")
 
 
 def main():
-    """Main entry point for Fire CLI."""
-    fire.Fire(ClaifCLI)
+    """Main entry point for the CLI."""
+    fire.Fire(CLI)

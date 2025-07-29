@@ -1,18 +1,21 @@
 [project]
 name = 'claif'
-description = 'Unified command-line interface framework for AI language models'
+description = 'A unified CLI and Python library for interacting with local and remote LLMs, compatible with the OpenAI Responses API.'
 readme = 'README.md'
 requires-python = '>=3.10'
 keywords = [
-    'ai',
-    'llm',
+    'claif',
     'claude',
     'gemini',
-    'openai',
+    'codex',
+    'lm-studio',
+    'ai',
+    'llm',
     'cli',
-    'framework',
-    'mcp',
-    'language-models',
+    'command-line',
+    'artificial-intelligence',
+    'openai',
+    'responses-api',
 ]
 dynamic = ['version']
 classifiers = [
@@ -28,9 +31,7 @@ classifiers = [
     'Intended Audience :: Developers',
 ]
 dependencies = [
-    'claif_cla>=1.0.0',
-    'claif_gem>=1.0.0',
-    'claif_cod>=1.0.0',
+    'openai>=1.0.0',
     'fire>=0.7.0',
     'rich>=13.9.4',
     'fastmcp>=2.9.2',
@@ -79,7 +80,14 @@ docs = [
     'sphinx-autodoc-typehints>=3.2.0',
     'myst-parser>=4.0.1',
 ]
+providers = [
+    'claif_cla>=1.0.0',
+    'claif_gem>=1.0.0',
+    'claif_cod>=1.0.0',
+    'claif_lms>=0.0.1',
+]
 all = [
+    'openai>=1.0.0',
     'fire>=0.7.0',
     'rich>=13.9.4',
     'fastmcp>=2.9.2',
@@ -93,6 +101,7 @@ all = [
     'claif_cla>=1.0.0',
     'claif_gem>=1.0.0',
     'claif_cod>=1.0.0',
+    'claif_lms>=0.0.1',
     'tenacity>=9.0.0',
 ]
 

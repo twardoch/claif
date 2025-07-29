@@ -1,7 +1,5 @@
 """Tests for claif.common.types module."""
 
-from dataclasses import dataclass
-
 import pytest
 
 from claif.common.types import (

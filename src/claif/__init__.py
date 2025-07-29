@@ -1,35 +1,8 @@
-"""Claif - Command Line Artificial Intelligence Framework."""
+# this_file: claif/src/claif/__init__.py
+"""Unified Claif framework with OpenAI Responses API compatibility."""
 
-from claif.common import (
-    ClaifError,
-    ClaifOptions,
-    ClaifResponse,
-    Config,
-    ConfigurationError,
-    Message,
-    Provider,
-    ProviderError,
-    ResponseMetrics,
-    TextBlock,
-    ToolResultBlock,
-    ToolUseBlock,
-    load_config,
-)
+from claif.client import ClaifClient
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
-__all__ = [
-    "ClaifError",
-    "ClaifOptions",
-    "ClaifResponse",
-    "Config",
-    "ConfigurationError",
-    "Message",
-    "Provider",
-    "ProviderError",
-    "ResponseMetrics",
-    "TextBlock",
-    "ToolResultBlock",
-    "ToolUseBlock",
-    "load_config",
-]
+__all__ = ["ClaifClient"]
