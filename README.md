@@ -701,18 +701,105 @@ pre-commit install
 
 ### Running Tests
 
+The Claif framework includes comprehensive tests to ensure robust functionality:
+
 ```bash
+# Install with test dependencies
+pip install -e ".[test]"
+
 # Run all tests
-pytest
+uvx hatch test
+
+# Run specific test modules
+uvx hatch test -- tests/test_functional_simple.py -v
+uvx hatch test -- tests/test_client.py -v
 
 # Run with coverage
-pytest --cov=src/claif --cov-report=html
+uvx hatch test -- --cov=src/claif --cov-report=html
+```
 
-# Run specific test
-pytest tests/test_client.py -v
+#### Test Structure
 
-# Run integration tests (requires provider packages)
-pytest tests/integration/ -v
+```
+tests/
+├── test_functional_simple.py  # Simple functional tests (no provider dependencies)
+├── test_client.py             # Core client functionality tests
+├── test_providers.py          # Provider discovery and loading tests
+├── test_config.py             # Configuration management tests
+└── conftest.py                # Test fixtures and configuration
+```
+
+#### Example Test Usage
+
+The functional tests demonstrate the unified client interface:
+
+```python
+# Test provider auto-detection
+def test_provider_auto_detection():
+    # Auto-detects Claude if ANTHROPIC_API_KEY is set
+    with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
+        client = ClaifClient()
+        assert client.provider == "claude"
+
+# Test unified API across providers  
+def test_unified_chat_api():
+    client = ClaifClient(provider="claude")
+    
+    response = client.chat.completions.create(
+        model="claude-3-5-sonnet-20241022",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+    
+    assert isinstance(response, ChatCompletion)
+    assert response.choices[0].message.role == "assistant"
+
+# Test provider delegation
+def test_provider_delegation():
+    with patch("claif_cla.client.ClaudeClient") as mock_claude:
+        mock_client = MagicMock()
+        mock_claude.return_value = mock_client
+        
+        client = ClaifClient(provider="claude")
+        client.chat.completions.create(
+            model="claude-3-5-sonnet-20241022",
+            messages=[{"role": "user", "content": "Test"}]
+        )
+        
+        # Verify delegation to provider client
+        mock_client.chat.completions.create.assert_called_once()
+
+# Test streaming support
+def test_streaming():
+    client = ClaifClient(provider="claude")
+    
+    stream = client.chat.completions.create(
+        model="claude-3-5-sonnet-20241022",
+        messages=[{"role": "user", "content": "Count to 3"}],
+        stream=True
+    )
+    
+    chunks = list(stream)
+    assert len(chunks) > 0
+    assert all(isinstance(chunk, ChatCompletionChunk) for chunk in chunks)
+```
+
+#### Testing Provider Packages
+
+Each provider package (`claif_cla`, `claif_gem`, `claif_cod`) includes its own comprehensive test suite. The main claif package includes simple functional tests that don't require provider dependencies for CI/CD compatibility.
+
+For full integration testing with providers:
+
+```bash
+# Install all providers
+pip install claif[all]
+
+# Run provider-specific tests
+cd claif_cla && uvx hatch test
+cd claif_gem && uvx hatch test  
+cd claif_cod && uvx hatch test
+
+# Run integration tests
+uvx hatch test -- tests/integration/ -v
 ```
 
 ### Code Quality
