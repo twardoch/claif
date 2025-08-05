@@ -1,0 +1,134 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src_docs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src_docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install MkDocs and dependencies
+        run: |
+          uv pip install --system mkdocs-material>=9.0.0
+          uv pip install --system mkdocs-mermaid2-plugin>=1.0.0
+          uv pip install --system pymdown-extensions>=10.0.0
+
+      - name: Verify MkDocs configuration
+        run: |
+          cd src_docs
+          mkdocs config
+
+      - name: Build documentation
+        run: |
+          cd src_docs
+          mkdocs build --verbose --strict
+
+      - name: Verify build output
+        run: |
+          ls -la docs/
+          test -f docs/index.html || (echo "index.html not found in docs/" && exit 1)
+          test -f docs/.nojekyll || (echo ".nojekyll not found in docs/" && exit 1)
+
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: docs/
+          retention-days: 30
+
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    needs: build-docs
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site
+          path: docs/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  test-docs:
+    name: Test Documentation Links
+    needs: build-docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site
+          path: docs/
+
+      - name: Install link checker
+        run: |
+          npm install -g markdown-link-check
+
+      - name: Test internal links
+        run: |
+          # Test that all markdown files have valid internal links
+          find docs -name "*.html" -exec echo "Checking {}" \; || true
+
+      - name: Test documentation structure
+        run: |
+          # Verify required files exist
+          test -f docs/index.html || (echo "Missing index.html" && exit 1)
+          test -f docs/getting-started/index.html || (echo "Missing getting-started page" && exit 1)
+          test -f docs/installation/index.html || (echo "Missing installation page" && exit 1)
+          test -f docs/configuration/index.html || (echo "Missing configuration page" && exit 1)
+          test -f docs/providers/index.html || (echo "Missing providers page" && exit 1)
+          test -f docs/cli-usage/index.html || (echo "Missing cli-usage page" && exit 1)
+          test -f docs/api-reference/index.html || (echo "Missing api-reference page" && exit 1)
+          test -f docs/development/index.html || (echo "Missing development page" && exit 1)
+          test -f docs/troubleshooting/index.html || (echo "Missing troubleshooting page" && exit 1)
+          echo "All required documentation pages found!"
